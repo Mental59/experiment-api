@@ -1,7 +1,6 @@
 import io
 import re
 import os
-import pathlib
 import uuid
 from typing import Dict, List
 
@@ -12,9 +11,7 @@ from num2words import num2words
 from tqdm import tqdm
 
 from . import features
-
-MODULE_DIR = pathlib.Path(__file__).parent.resolve()
-FEATURES_PATH = os.path.join(MODULE_DIR, '..', '..', 'artifacts', 'crf_features')
+from ...constants.artifacts import FEATURES_PATH
 
 class CustomDataset(Dataset):
     """
