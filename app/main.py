@@ -1,17 +1,18 @@
-from fastapi import FastAPI, UploadFile
+from fastapi import FastAPI
 
-from .services import startup as startup_service
-from .services.dataset_processor import uploader
-
-app = FastAPI()
-startup_service.on_startup()
+from .core.events import create_start_app_handler, create_stop_app_handler
+from .api.routes import api
 
 
-@app.get("/")
-def read_root():
-    return {"Hello": "World"}
+def get_application() -> FastAPI:
+    app = FastAPI()
+
+    app.add_event_handler('startup', create_start_app_handler())
+    app.add_event_handler('shutdown', create_stop_app_handler())
+
+    app.include_router(api.router)
+
+    return app
 
 
-@app.post("/dataset/upload")
-async def upload_dataset(dataset: UploadFile):
-    await uploader.upload_dataset(dataset)
+app = get_application()
