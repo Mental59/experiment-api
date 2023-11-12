@@ -1,2 +1,8 @@
 /venv/
 artifacts/
+__pycache__/
+*.pth
+*.bin
+.ipynb_checkpoints/
+.idea/
+.neptune/
