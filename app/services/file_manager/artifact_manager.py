@@ -1,6 +1,7 @@
 import os
-from ...constants.artifacts import FEATURES_PATH
+from ...constants.artifacts import PATHS
 
 
 def create_artifact_folders():
-  os.makedirs(FEATURES_PATH, exist_ok=True)
+  for path in PATHS.values():
+    os.makedirs(path, exist_ok=True)
