@@ -23,14 +23,14 @@ class CustomDataset(Dataset):
     fractional_number_regex = re.compile(r"^\d+/\d+$")
 
     def __init__(
-            self,
-            data,
-            tag_to_ix,
-            word_to_ix,
-            freq_dict: Dict[str, pd.DataFrame] = None,
-            case_sensitive=True,
-            prepare_dataset=True,
-            convert_nums2words=False
+        self,
+        data,
+        tag_to_ix,
+        word_to_ix,
+        freq_dict: Dict[str, pd.DataFrame] = None,
+        case_sensitive=True,
+        prepare_dataset=True,
+        convert_nums2words=False
     ):
         super(CustomDataset, self).__init__()
         self.case_sensitive = case_sensitive
