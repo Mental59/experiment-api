@@ -1,13 +1,13 @@
-import os
+import io
 from typing import List
 
 import torch
 from torch import nn
 from matplotlib import pyplot as plt
 from tqdm import tqdm
+from neptune.types import File
 
 from .custom_dataset import CustomDataset
-from ...constants.artifacts import PATHS
 
 
 def train(
@@ -21,7 +21,7 @@ def train(
         verbose=True):
     losses = {'train': [], 'val': []}
     best_loss = None
-    model_path = os.path.join(PATHS['TEMP_PATH'], 'model.pth')
+    model_buffer = io.BytesIO()
 
     for epoch in tqdm(range(1, num_epochs + 1)):
         losses_per_epoch = {'train': 0.0, 'val': 0.0}
@@ -65,7 +65,8 @@ def train(
 
         if best_loss is None or best_loss > losses_per_epoch['val']:
             best_loss = losses_per_epoch['val']
-            torch.save(model.state_dict(), model_path)
+            model_buffer.seek(0)
+            torch.save(model.state_dict(), model_buffer)
 
         if scheduler is not None:
             scheduler.step(losses_per_epoch['val'])
@@ -78,11 +79,12 @@ def train(
                 sep=', '
             )
 
-    if os.path.exists(model_path):
-        if neptune_run is not None:
-            neptune_run['model_checkpoints/best_model'].upload(model_path)
+    if neptune_run is not None:
+        model_buffer.seek(0)
+        neptune_run['model_checkpoints/best_model'].upload(File.from_content(model_buffer.read(), extension='pth'))
 
-        model.load_state_dict(torch.load(model_path))
+        model_buffer.seek(0)
+        model.load_state_dict(torch.load(model_buffer))
 
     return model, losses
 

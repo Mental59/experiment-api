@@ -6,7 +6,6 @@ from ..services.file_manager import file_manager
 def create_start_app_handler() -> Callable:
     def start_app():
         file_manager.create_artifact_folders()
-        file_manager.create_core_folders()
        
     return start_app
 

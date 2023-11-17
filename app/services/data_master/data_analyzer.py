@@ -1,13 +1,14 @@
 import matplotlib.pyplot as plt
 from matplotlib import style
 import pandas as pd
+from neptune.types import File
 
 
 class DataAnalyzer:
     """Class for analyzing results"""
 
     @staticmethod
-    def analyze(test_eval, keys):
+    def analyze(X, y_true, y_pred, keys):
         """
         Creates colored table and save it on path "table_save_path" (.xlsx)
         Creates bar chart and save it on path "diagram_save_path" (.png)
@@ -16,12 +17,12 @@ class DataAnalyzer:
         predicted = []
         actual = []
 
-        for eval in test_eval:
+        for words, true_tags, pred_tags in zip(X, y_true, y_pred):
 
             predicted_example = dict.fromkeys(keys, '')
             actual_example = dict.fromkeys(keys, '')
 
-            for word, true_tag, pred_tag in eval:
+            for word, true_tag, pred_tag in zip(words, true_tags, pred_tags):
                 if true_tag in actual_example.keys():
                     actual_example[true_tag] += f'{word} '
 
@@ -77,7 +78,7 @@ class DataAnalyzer:
 
             false_negative[key] += false_positive[key]
 
-        style.use('seaborn-darkgrid')
+        style.use('seaborn-v0_8-darkgrid')
 
         fig = plt.figure(figsize=(18, 8))
 
@@ -133,7 +134,10 @@ class DataAnalyzer:
 
             return res
 
-        df_predicted.style = df_predicted.style.apply(set_colors, axis=None)
+        df_predicted.style.apply(set_colors, axis=None)
+
+        colored_df = File.as_html(df_predicted)
+        colored_df.content
 
         # with pd.ExcelWriter(table_save_path, engine='xlsxwriter') as writer:
         #     colored_predicted.to_excel(writer, sheet_name='predicted')

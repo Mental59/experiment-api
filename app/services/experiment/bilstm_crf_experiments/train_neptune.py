@@ -69,11 +69,12 @@ def run(
         experiment_logger.log_by_path_neptune(run, 'data/dataset', dataset_generator.get_dataset_path(dataset))
 
         tag_to_ix = dataset_generator.generate_tag_to_ix_from_sents(sents)
-        ix_to_tag = dataset_generator.generate_ix_to_tag(tag_to_ix)
-        experiment_logger.log_json_neptune(run, tag_to_ix, 'data/tag_to_ix', 'tag_to_ix.json')
+        ix_to_tag = dataset_generator.generate_ix_to_key(tag_to_ix)
+        experiment_logger.log_json_neptune(run, tag_to_ix, 'data/tag_to_ix')
 
         word_to_ix = dataset_generator.generate_word_to_ix(sents, num2words=num2words, case_sensitive=case_sensitive)
-        experiment_logger.log_json_neptune(run, word_to_ix, 'data/word_to_ix', 'word_to_ix.json')
+        ix_to_word = dataset_generator.generate_ix_to_key(word_to_ix)
+        experiment_logger.log_json_neptune(run, word_to_ix, 'data/word_to_ix')
 
         train_data, val_data = train_test_split(sents, test_size=test_size)
         train_dataset = CustomDataset(train_data, tag_to_ix, word_to_ix, convert_nums2words=num2words)
@@ -102,33 +103,29 @@ def run(
         )
 
         y_val_pred = []
+        y_val_true = []
+        X_val_indices = []
         model.eval()
         with torch.no_grad():
             for x_batch, y_batch, mask_batch, _ in dataloaders['val']:
+                X_val_indices.extend([torch.tensor([word_index for word_index in sent if word_index != word_to_ix[PAD]]) for sent in x_batch])
+
                 x_batch, mask_batch = x_batch.to(device), mask_batch.to(device)
                 y_batch_pred = model(x_batch, mask_batch)
+
                 y_val_pred.extend(y_batch_pred)
+                y_val_true.extend([[tag.item() for tag in tags if tag >= 0] for tags in y_batch])
         y_val_pred = [[ix_to_tag[tag] for tag in sentence] for sentence in y_val_pred]
-        y_val_true = [tags for _, tags in val_dataset.raw_data()]
+        y_val_true = [[ix_to_tag[tag] for tag in sentence] for sentence in y_val_true]
 
-        X_test = [
-            torch.tensor(val_dataset.sentence_to_indices(sentence), dtype=torch.int64) for sentence, _ in val_dataset.raw_data()
-        ]
+        unk_foreach_tag = count_unk_foreach_tag(X_val_indices, y_val_true, labels, word_to_ix[UNK])
+        experiment_logger.log_json_neptune(run, unk_foreach_tag, 'results/unk_foreach_tag')
 
-        unk_foreach_tag = count_unk_foreach_tag(X_test, y_val_true, labels, word_to_ix[UNK])
-        experiment_logger.log_json_neptune(run, unk_foreach_tag, 'results/unk_foreach_tag', 'unk_foreach_tag.json')
-
-        conf = get_model_mean_confidence(model, X_test, device)
+        conf = get_model_mean_confidence(model, X_val_indices, device)
         run['metrics/confidence'] = conf
 
-        
         y_val_true_flat = flatten_list(y_val_true)
         y_val_pred_flat = flatten_list(y_val_pred)
-
-        print(f"y_val_true length = {len(y_val_true)}")
-        print(f"y_val_pred length = {len(y_val_pred)}")
-        print(f"y_val_true_flat length = {len(y_val_true_flat)}")
-        print(f"y_val_pred_flat length = {len(y_val_pred_flat)}")
 
         run['metrics/f1_weighted'] = metrics.f1_score(y_val_true_flat, y_val_pred_flat, average='weighted', labels=labels)
         run['metrics/precision_weighted'] = metrics.precision_score(y_val_true_flat, y_val_pred_flat, average='weighted', labels=labels)
@@ -136,13 +133,15 @@ def run(
         run['metrics/accuracy'] = metrics.accuracy_score(y_val_true_flat, y_val_pred_flat)
 
         flat_class_report = metrics.classification_report(y_val_true_flat, y_val_pred_flat, labels=labels, digits=3)
-        experiment_logger.log_txt_neptune(run, flat_class_report, 'metrics/flat_classification_report', 'flat-classification-report.txt')
+        experiment_logger.log_txt_neptune(run, flat_class_report, 'metrics/flat_classification_report')
 
         df_predicted, df_actual, fig = DataAnalyzer.analyze(
-            test_eval=[list(zip(sentence, tags, y_val_pred[index])) for index, (sentence, tags) in enumerate(val_dataset.raw_data())],
+            X=[[ix_to_word[word_idx.item()] for word_idx in word_indices] for word_indices in X_val_indices],
+            y_true=y_val_true,
+            y_pred=y_val_pred,
             keys=labels
         )
-        experiment_logger.log_figure_neptune(run, 'results/diagram', fig, 'diagram.png')
+        experiment_logger.log_figure_neptune(run, 'results/diagram', fig)
         experiment_logger.log_table_neptune(run, 'results/predicted', df_predicted)
         experiment_logger.log_table_neptune(run, 'results/actual', df_actual)
 

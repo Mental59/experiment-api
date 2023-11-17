@@ -29,8 +29,8 @@ def generate_tag_to_ix_from_sents(sents: list[tuple[list[str], list[str]]]) -> d
     return {key: index for index, key in enumerate(sorted(labels_set))}
 
 
-def generate_ix_to_tag(tag_to_ix: dict[str, int]):
-    return {index: key for key, index in tag_to_ix.items()}
+def generate_ix_to_key(key_to_ix: dict[str, int]):
+    return {index: key for key, index in key_to_ix.items()}
 
 
 def generate_labels(tag_to_ix: dict[str, int]):
