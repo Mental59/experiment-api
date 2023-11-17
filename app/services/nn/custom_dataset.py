@@ -12,7 +12,7 @@ from tqdm import tqdm
 
 from . import features
 from ...constants.artifacts import PATHS
-from ...constants.nn import PAD, UNK
+from ...constants.nn import PAD, UNK, OTHER_TAG
 
 
 class CustomDataset(Dataset):
@@ -94,6 +94,7 @@ class CustomDataset(Dataset):
 
     def compute_raw_data(self, data):
         for sentence, tags in data:
+
             if self.convert_nums2words:
                 new_sentence = []
                 new_tags = []
@@ -112,7 +113,7 @@ class CustomDataset(Dataset):
                         new_tags.extend([tag] * len(first_price_words))
 
                         new_sentence.append('/')
-                        new_tags.append('Other')
+                        new_tags.append(OTHER_TAG)
 
                         new_sentence.extend(second_price_words)
                         new_tags.extend([tag] * len(second_price_words))

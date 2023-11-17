@@ -8,3 +8,4 @@ NUM_WORDS = [
 ]
 PAD = 'PAD'
 UNK = 'UNK'
+OTHER_TAG = 'Other'

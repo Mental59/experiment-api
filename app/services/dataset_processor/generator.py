@@ -33,6 +33,13 @@ def generate_ix_to_tag(tag_to_ix: dict[str, int]):
     return {index: key for key, index in tag_to_ix.items()}
 
 
+def generate_labels(tag_to_ix: dict[str, int]):
+    lst = [None] * len(tag_to_ix)
+    for word, index in tag_to_ix.items():
+        lst[index] = word
+    return lst
+
+
 def generate_word_to_ix(sents: list[tuple[list[str], list[str]]], num2words: bool = True, case_sensitive: bool = False):
     words_set = set()
 
