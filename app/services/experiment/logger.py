@@ -1,12 +1,9 @@
-import os
 import json
 
 import neptune
 from neptune.types import File
 import pandas as pd
 from matplotlib.figure import Figure
-
-from ...constants.artifacts import PATHS
 
 
 def log_json_neptune(run: neptune.Run, data: dict, neptune_path: str) -> None:
