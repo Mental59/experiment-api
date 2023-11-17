@@ -11,7 +11,9 @@ from num2words import num2words
 from tqdm import tqdm
 
 from . import features
-from ...constants.artifacts import FEATURES_PATH
+from ...constants.artifacts import PATHS
+from ...constants.nn import PAD, UNK
+
 
 class CustomDataset(Dataset):
     """
@@ -28,25 +30,18 @@ class CustomDataset(Dataset):
         tag_to_ix,
         word_to_ix,
         freq_dict: Dict[str, pd.DataFrame] = None,
-        case_sensitive=True,
-        prepare_dataset=True,
         convert_nums2words=False
     ):
         super(CustomDataset, self).__init__()
-        self.case_sensitive = case_sensitive
         self.convert_nums2words = convert_nums2words
-        self.features_path_dir = os.path.join(FEATURES_PATH, str(uuid.uuid4()))
-        self.pad = 'PAD'
-        self.unk = 'UNK'
+        self.features_path_dir = os.path.join(PATHS['FEATURES_PATH'], str(uuid.uuid4()))
         self.word_to_ix = word_to_ix
         self.tag_to_ix = tag_to_ix
+        self.pad_idx = word_to_ix[PAD]
+        self.unk_idx = word_to_ix[UNK]
         self.freq_dict = freq_dict
-        if not case_sensitive:
-            self.word_to_ix = {word.lower(): index for word, index in word_to_ix.items()}
-            self.pad = self.pad.lower()
-            self.unk = self.unk.lower()
         self.raw_data_cached = list(self.compute_raw_data(data))
-        self.data = self.prepare_dataset() if prepare_dataset else None
+        self.data = self.prepare_dataset()
         self.tensor_buffers = []
         if self.freq_dict is not None:
             self.compute_custom_features()
@@ -72,7 +67,7 @@ class CustomDataset(Dataset):
             sentence = self.sentence_to_indices(sentence)
             tags = self.tags_to_indices(tags)
 
-            sentence.extend([self.word_to_ix[self.pad]] * (max_len - len(sentence)))
+            sentence.extend([self.pad_idx] * (max_len - len(sentence)))
             tags.extend([-1] * (max_len - len(tags)))
 
             prepared_data.append(
@@ -82,7 +77,7 @@ class CustomDataset(Dataset):
 
     def sentence_to_indices(self, sentence):
         return [
-            self.word_to_ix[word] if word in self.word_to_ix else self.word_to_ix[self.unk] for word in sentence
+            self.word_to_ix[word] if word in self.word_to_ix else self.unk_idx for word in sentence
         ]
 
     def tags_to_indices(self, tags):
@@ -99,9 +94,6 @@ class CustomDataset(Dataset):
 
     def compute_raw_data(self, data):
         for sentence, tags in data:
-            if not self.case_sensitive:
-                sentence = [word.lower() for word in sentence]
-
             if self.convert_nums2words:
                 new_sentence = []
                 new_tags = []
@@ -195,8 +187,6 @@ class CustomDataset(Dataset):
             self.tensor_buffers.append(buffer)
 
     def count(self, word: str):
-        if not self.case_sensitive:
-            word = word.lower()
         if word not in self.word_to_ix:
             raise ValueError(f'Tag: {word} is not in word_to_ix dictionary keys')
         word_ix = self.word_to_ix[word]

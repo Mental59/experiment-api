@@ -8,6 +8,6 @@ class TrainParams(BaseModel):
     scheduler_factor: float = 1e-1
     scheduler_patience: int = 10
     weight_decay: float = 1e-4
-    case_sensitive_vocab: bool = False
+    case_sensitive: bool = False
     test_size: float = 0.2
     num2words: bool = True

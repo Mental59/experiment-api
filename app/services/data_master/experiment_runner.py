@@ -6,7 +6,7 @@ import uuid
 import papermill as pm
 import datetime
 
-from ...constants.artifacts import EXPERIMENTS_PATH
+from ...constants.artifacts import PATHS
 
 
 def run_experiment(
@@ -16,7 +16,7 @@ def run_experiment(
     run_id = str(uuid.uuid4())
 
     experiment['START_TIME'] = get_current_time()
-    experiment['OUTPUT_DIR'] = get_output_dir(EXPERIMENTS_PATH, run_id)
+    experiment['OUTPUT_DIR'] = get_output_dir(PATHS['EXPERIMENTS_PATH'], run_id)
 
     if not os.path.exists(experiment['OUTPUT_DIR']):
         os.mkdir(experiment['OUTPUT_DIR'])

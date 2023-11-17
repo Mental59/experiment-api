@@ -206,7 +206,9 @@ class DataGenerator:
         return sents
 
     @staticmethod
-    def generate_sents2(lines: list):
+    def generate_sents2(file):
+        lines = file.read().split('\n')
+
         sents = []
         sentences, tags = [], []
         for line in lines:

@@ -4,8 +4,10 @@ from typing import List
 import torch
 from torch import nn
 from matplotlib import pyplot as plt
+from tqdm import tqdm
 
 from .custom_dataset import CustomDataset
+from ...constants.artifacts import PATHS
 
 
 def train(
@@ -14,16 +16,14 @@ def train(
         dataloaders,
         device,
         num_epochs,
-        output_dir,
         neptune_run=None,
         scheduler=None,
-        tqdm=None,
         verbose=True):
     losses = {'train': [], 'val': []}
     best_loss = None
-    model_path = os.path.join(output_dir, 'model.pth')
+    model_path = os.path.join(PATHS['TEMP_PATH'], 'model.pth')
 
-    for epoch in range(1, num_epochs + 1) if tqdm is None else tqdm(range(1, num_epochs + 1)):
+    for epoch in tqdm(range(1, num_epochs + 1)):
         losses_per_epoch = {'train': 0.0, 'val': 0.0}
 
         if neptune_run is not None:
@@ -140,12 +140,11 @@ def get_model_mean_confidence(
         model: nn.Module,
         X_test: List[torch.Tensor],
         device,
-        tqdm,
         test_dataset: CustomDataset = None) -> float:
     """Computes model's confidence for each sentence in X_test"""
     conf = 0
     with torch.no_grad():
-        for index, sentence in tqdm(enumerate(X_test)):
+        for index, sentence in tqdm(enumerate(X_test), desc='get_model_mean_confidence'):
             sentence = sentence.unsqueeze(0).to(device)
 
             f = None
@@ -165,3 +164,7 @@ def get_model_mean_confidence(
             conf += confidence.item()
 
     return conf / len(X_test)
+
+
+def flatten_list(lst: list):
+    return [item for row in lst for item in row]

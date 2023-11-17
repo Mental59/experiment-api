@@ -7,7 +7,7 @@ class DataAnalyzer:
     """Class for analyzing results"""
 
     @staticmethod
-    def analyze(test_eval, keys, table_save_path, diagram_save_path, prob_table=None):
+    def analyze(test_eval, keys):
         """
         Creates colored table and save it on path "table_save_path" (.xlsx)
         Creates bar chart and save it on path "diagram_save_path" (.png)
@@ -133,14 +133,14 @@ class DataAnalyzer:
 
             return res
 
-        colored_predicted = df_predicted.style.apply(set_colors, axis=None)
+        df_predicted.style = df_predicted.style.apply(set_colors, axis=None)
 
-        with pd.ExcelWriter(table_save_path, engine='xlsxwriter') as writer:
-            colored_predicted.to_excel(writer, sheet_name='predicted')
-            df_actual.to_excel(writer, sheet_name='actual')
-            if prob_table is not None:
-                prob_table.to_excel(writer, sheet_name='probabilities')
+        # with pd.ExcelWriter(table_save_path, engine='xlsxwriter') as writer:
+        #     colored_predicted.to_excel(writer, sheet_name='predicted')
+        #     df_actual.to_excel(writer, sheet_name='actual')
+        #     if prob_table is not None:
+        #         prob_table.to_excel(writer, sheet_name='probabilities')
 
-        plt.savefig(diagram_save_path)
+        # plt.savefig(diagram_save_path)
 
-        return fig, colored_predicted, df_actual
+        return df_predicted, df_actual, fig
