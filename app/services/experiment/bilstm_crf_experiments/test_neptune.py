@@ -70,3 +70,5 @@ def run(
         neptune_logger.log_figure('results/diagram', eval_res['fig'])
         neptune_logger.log_colorized_table('results/predicted', eval_res['df_predicted'], eval_res['matched_indices'], eval_res['false_positive_indices'], eval_res['false_negative_indices'])
         neptune_logger.log_table('results/actual', eval_res['df_actual'])
+
+        # TODO: unknown words appear as UNK in resulted tables
