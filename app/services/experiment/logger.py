@@ -1,4 +1,5 @@
 import json
+from typing import Iterable
 
 import neptune
 from neptune.types import File
@@ -6,21 +7,47 @@ import pandas as pd
 from matplotlib.figure import Figure
 
 
-def log_json_neptune(run: neptune.Run, data: dict, neptune_path: str) -> None:
-    run[neptune_path].upload(File.from_content(json.dumps(data), extension='json'))
+class NeptuneLogger:          
+    def __init__(self, project: str, api_token: str) -> None:
+        self.run = neptune.init_run(
+            project=project,
+            api_token=api_token,
+            capture_stderr=True,
+            capture_stdout=True,
+            capture_traceback=True,
+            capture_hardware_metrics=True,
+            dependencies='infer'
+        )
+    
+    def __enter__(self):
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tbf):
+        self.run.stop()
 
-
-def log_txt_neptune(run: neptune.Run, data: str, neptune_path: str) -> None:
-    run[neptune_path].upload(File.from_content(data))
-
-
-def log_by_path_neptune(run: neptune.Run, neptune_path: str, data_path: str):
-    run[neptune_path].upload(data_path)
-
-
-def log_table_neptune(run: neptune.Run, neptune_path: str, df: pd.DataFrame):
-    run[neptune_path].upload(File.as_html(df))
-
-
-def log_figure_neptune(run: neptune.Run, neptune_path: str, figure: Figure):
-    run[neptune_path].upload(figure)
+    def json(self, name: str, data: dict):
+        self.run[name].upload(File.from_content(json.dumps(data), extension='json'))
+    
+    def txt(self, name: str, data: str):
+        self.run[name].upload(File.from_content(data))
+    
+    def by_path(self, name: str, path: str):
+        self.run[name].upload(path)
+    
+    def table(self, name: str, df: pd.DataFrame):
+        self.run[name].upload(File.as_html(df))
+    
+    def figure(self, name: str, figure: Figure):
+        self.run[name].upload(figure)
+    
+    def param(self, name: str, param):
+        self.run[name] = param
+    
+    def binary(self, name: str, data: bytes, extension: str):
+        self.run[name].upload(File.from_content(data, extension=extension))
+    
+    def append_param(self, name: str, param):
+        self.run[name].append(param)
+    
+    def add_tags(self, tags: str | Iterable[str]):
+        self.run['sys/tags'].add(tags)

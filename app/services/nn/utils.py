@@ -1,13 +1,13 @@
 import io
-from typing import List
+from typing import List, Optional
 
 import torch
 from torch import nn
 from matplotlib import pyplot as plt
 from tqdm import tqdm
-from neptune.types import File
 
 from .custom_dataset import CustomDataset
+from ...services.experiment.logger import NeptuneLogger
 
 
 def train(
@@ -16,7 +16,7 @@ def train(
         dataloaders,
         device,
         num_epochs,
-        neptune_run=None,
+        neptune_logger: Optional[NeptuneLogger]=None,
         scheduler=None,
         verbose=True):
     losses = {'train': [], 'val': []}
@@ -26,8 +26,8 @@ def train(
     for epoch in tqdm(range(1, num_epochs + 1)):
         losses_per_epoch = {'train': 0.0, 'val': 0.0}
 
-        if neptune_run is not None:
-            neptune_run['epoch'] = epoch
+        if neptune_logger is not None:
+            neptune_logger.param('epoch', epoch)
 
         model.train()
         for x_batch, y_batch, mask_batch, custom_features in dataloaders['train']:
@@ -40,8 +40,8 @@ def train(
             loss.backward()
             optimizer.step()
 
-            if neptune_run is not None:
-                neptune_run['train/batch/loss'].append(loss.item())
+            if neptune_logger is not None:
+                neptune_logger.append_param('train/batch/loss', loss.item())
 
             losses_per_epoch['train'] += loss.item()
 
@@ -54,8 +54,8 @@ def train(
                 custom_features = custom_features.to(device)
                 loss = model.neg_log_likelihood(x_batch, y_batch, mask_batch, custom_features)
 
-                if neptune_run is not None:
-                    neptune_run['val/batch/loss'].append(loss.item())
+                if neptune_logger is not None:
+                    neptune_logger.append_param('val/batch/loss', loss.item())
 
                 losses_per_epoch['val'] += loss.item()
 
@@ -79,9 +79,9 @@ def train(
                 sep=', '
             )
 
-    if neptune_run is not None:
+    if neptune_logger is not None:
         model_buffer.seek(0)
-        neptune_run['model_checkpoints/best_model'].upload(File.from_content(model_buffer.read(), extension='pth'))
+        neptune_logger.binary('model_checkpoints/best_model', model_buffer.read(), 'pth')
 
         model_buffer.seek(0)
         model.load_state_dict(torch.load(model_buffer))
