@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
 from matplotlib import style
 import pandas as pd
-from neptune.types import File
 
 
 class DataAnalyzer:
@@ -35,24 +34,24 @@ class DataAnalyzer:
         df_actual = pd.DataFrame({key: [wine.get(key) for wine in actual] for key in keys})
         df_predicted = pd.DataFrame({key: [wine.get(key) for wine in predicted] for key in keys})
 
-        matches = dict.fromkeys(keys + ['All'], 0)  # совпадения
+        matches = dict.fromkeys(keys + ['All'], 0)
         matched_indices = []
-        false_negative = dict.fromkeys(keys, 0)  # ложноотрицательные ошибки
+        false_negative = dict.fromkeys(keys, 0)
         false_negative_indices = []
-        false_positive = dict.fromkeys(keys, 0)  # ложноположительные ошибки
+        false_positive = dict.fromkeys(keys, 0)
         false_positive_indices = []
 
         for index, row in df_predicted.iterrows():
 
             flag_all = True
 
-            for column in keys:
+            for col_index, column in enumerate(keys):
 
                 if row[column] == df_actual.iloc[index][column]:
 
                     matches[column] += 1
 
-                    matched_indices.append((index, column))
+                    matched_indices.append((index, col_index))
                 else:
 
                     flag_all = False
@@ -61,11 +60,11 @@ class DataAnalyzer:
 
                         false_negative[column] += 1
 
-                        false_negative_indices.append((index, column))
+                        false_negative_indices.append((index, col_index))
                     else:
                         false_positive[column] += 1
 
-                        false_positive_indices.append((index, column))
+                        false_positive_indices.append((index, col_index))
 
             if flag_all:
                 matches['All'] += 1
@@ -118,33 +117,4 @@ class DataAnalyzer:
                 if false_negative[key] >= 100:
                     plt.text(value + false_positive[key], index + .8, str(false_negative[key]))
 
-        def set_colors(data):
-            attr = 'background-color: {};border-width: thin'
-
-            res = data.copy()
-
-            for index, column in matched_indices:
-                res.iloc[index][column] = attr.format('green')
-
-            for index, column in false_positive_indices:
-                res.iloc[index][column] = attr.format('orange')
-
-            for index, column in false_negative_indices:
-                res.iloc[index][column] = attr.format('blue')
-
-            return res
-
-        df_predicted.style.apply(set_colors, axis=None)
-
-        colored_df = File.as_html(df_predicted)
-        colored_df.content
-
-        # with pd.ExcelWriter(table_save_path, engine='xlsxwriter') as writer:
-        #     colored_predicted.to_excel(writer, sheet_name='predicted')
-        #     df_actual.to_excel(writer, sheet_name='actual')
-        #     if prob_table is not None:
-        #         prob_table.to_excel(writer, sheet_name='probabilities')
-
-        # plt.savefig(diagram_save_path)
-
-        return df_predicted, df_actual, fig
+        return df_predicted, df_actual, fig, matched_indices, false_positive_indices, false_negative_indices

@@ -27,7 +27,7 @@ def train(
         losses_per_epoch = {'train': 0.0, 'val': 0.0}
 
         if neptune_logger is not None:
-            neptune_logger.param('epoch', epoch)
+            neptune_logger.log_param('epoch', epoch)
 
         model.train()
         for x_batch, y_batch, mask_batch, custom_features in dataloaders['train']:
@@ -81,7 +81,7 @@ def train(
 
     if neptune_logger is not None:
         model_buffer.seek(0)
-        neptune_logger.binary('model_checkpoints/best_model', model_buffer.read(), 'pth')
+        neptune_logger.log_binary('model_checkpoints/best_model', model_buffer.read(), 'pth')
 
         model_buffer.seek(0)
         model.load_state_dict(torch.load(model_buffer))

@@ -1,4 +1,5 @@
 /venv/
+__test__/
 artifacts/
 __pycache__/
 *.pth

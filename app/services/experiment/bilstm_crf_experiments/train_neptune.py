@@ -52,19 +52,19 @@ def run(
             'test_size': test_size,
             'num2words': num2words,
         }
-        neptune_logger.param('parameters', params)
+        neptune_logger.log_param('parameters', params)
         neptune_logger.add_tags([model, 'train', run_name])
 
         sents = dataset_generator.get_sents_from_dataset(dataset, case_sensitive=case_sensitive)
-        neptune_logger.by_path('data/dataset', dataset_generator.get_dataset_path(dataset))
+        neptune_logger.log_by_path('data/dataset', dataset_generator.get_dataset_path(dataset))
 
         tag_to_ix = dataset_generator.generate_tag_to_ix_from_sents(sents)
         ix_to_tag = dataset_generator.generate_ix_to_key(tag_to_ix)
-        neptune_logger.json('data/tag_to_ix', tag_to_ix)
+        neptune_logger.log_json('data/tag_to_ix', tag_to_ix)
 
         word_to_ix = dataset_generator.generate_word_to_ix(sents, num2words=num2words, case_sensitive=case_sensitive)
         ix_to_word = dataset_generator.generate_ix_to_key(word_to_ix)
-        neptune_logger.json('data/word_to_ix', word_to_ix)
+        neptune_logger.log_json('data/word_to_ix', word_to_ix)
 
         train_data, val_data = train_test_split(sents, test_size=test_size)
         train_dataset = CustomDataset(train_data, tag_to_ix, word_to_ix, convert_nums2words=num2words)
@@ -109,27 +109,27 @@ def run(
         y_val_true = [[ix_to_tag[tag] for tag in sentence] for sentence in y_val_true]
 
         unk_foreach_tag = count_unk_foreach_tag(X_val_indices, y_val_true, labels, word_to_ix[UNK])
-        neptune_logger.json('results/unk_foreach_tag', unk_foreach_tag)
+        neptune_logger.log_json('results/unk_foreach_tag', unk_foreach_tag)
 
         conf = get_model_mean_confidence(model, X_val_indices, device)
-        neptune_logger.param('metrics/confidence', conf)
+        neptune_logger.log_param('metrics/confidence', conf)
 
         y_val_true_flat = flatten_list(y_val_true)
         y_val_pred_flat = flatten_list(y_val_pred)
 
-        neptune_logger.param('metrics/f1_weighted', metrics.f1_score(y_val_true_flat, y_val_pred_flat, average='weighted', labels=labels))
-        neptune_logger.param('metrics/precision_weighted', metrics.precision_score(y_val_true_flat, y_val_pred_flat, average='weighted', labels=labels))
-        neptune_logger.param('metrics/recall_weighted', metrics.recall_score(y_val_true_flat, y_val_pred_flat, average='weighted', labels=labels))
-        neptune_logger.param('metrics/accuracy', metrics.accuracy_score(y_val_true_flat, y_val_pred_flat))
+        neptune_logger.log_param('metrics/f1_weighted', metrics.f1_score(y_val_true_flat, y_val_pred_flat, average='weighted', labels=labels))
+        neptune_logger.log_param('metrics/precision_weighted', metrics.precision_score(y_val_true_flat, y_val_pred_flat, average='weighted', labels=labels))
+        neptune_logger.log_param('metrics/recall_weighted', metrics.recall_score(y_val_true_flat, y_val_pred_flat, average='weighted', labels=labels))
+        neptune_logger.log_param('metrics/accuracy', metrics.accuracy_score(y_val_true_flat, y_val_pred_flat))
 
-        neptune_logger.txt('metrics/flat_classification_report', metrics.classification_report(y_val_true_flat, y_val_pred_flat, labels=labels, digits=3))
+        neptune_logger.log_txt('metrics/flat_classification_report', metrics.classification_report(y_val_true_flat, y_val_pred_flat, labels=labels, digits=3))
 
-        df_predicted, df_actual, fig = DataAnalyzer.analyze(
+        df_predicted, df_actual, fig, matched_indices, false_positive_indices, false_negative_indices = DataAnalyzer.analyze(
             X=[[ix_to_word[word_idx.item()] for word_idx in word_indices] for word_indices in X_val_indices],
             y_true=y_val_true,
             y_pred=y_val_pred,
             keys=labels
         )
-        neptune_logger.figure('results/diagram', fig)
-        neptune_logger.table('results/predicted', df_predicted)
-        neptune_logger.table('results/actual', df_actual)
+        neptune_logger.log_figure('results/diagram', fig)
+        neptune_logger.log_colorized_table('results/predicted', df_predicted, matched_indices, false_positive_indices, false_negative_indices)
+        neptune_logger.log_table('results/actual', df_actual)
