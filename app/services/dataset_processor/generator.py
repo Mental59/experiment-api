@@ -35,8 +35,10 @@ def generate_ix_to_key(key_to_ix: dict[str, int]):
 
 def generate_labels(tag_to_ix: dict[str, int]):
     lst = [None] * len(tag_to_ix)
+
     for word, index in tag_to_ix.items():
         lst[index] = word
+    
     return lst
 
 
@@ -59,3 +61,13 @@ def generate_word_to_ix(sents: list[tuple[list[str], list[str]]], num2words: boo
     words_set.update([PAD, UNK])
     
     return {word: index for index, word in enumerate(sorted(words_set))}
+
+
+def get_labels_from_sents(sents: list[tuple[list[str], list[str]]]) -> list[str]:
+    labels_set = set()
+
+    for _, labels in sents:
+        labels_set.update(labels)
+    
+    return list(labels_set)
+ 

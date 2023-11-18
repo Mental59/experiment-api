@@ -1,13 +1,10 @@
-import torch
 from torch.optim import Adam
 from torch.utils.data import DataLoader
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from sklearn.model_selection import train_test_split
-from sklearn import metrics
 
-from ....services.nn.utils import CustomDataset, train, get_model_mean_confidence, flatten_list
+from ....services.nn.utils import CustomDataset, train, evaluate_model
 from ....services.nn.bilstm_crf import BiLSTM_CRF
-from ....services.data_master import count_unk_foreach_tag, DataAnalyzer
 from ....models.ml.model_enum import ModelEnum
 from ....services.dataset_processor import generator as dataset_generator
 from ....services.experiment import setupper as experiment_setupper
@@ -32,10 +29,10 @@ def run(
     test_size: float,
     num2words: bool,
 ):
-    model = str(ModelEnum.BiLSTM_CRF)
-    device = experiment_setupper.get_torch_device()
-
     with NeptuneLogger(project, api_token) as neptune_logger:
+        model = str(ModelEnum.BiLSTM_CRF)
+        device = experiment_setupper.get_torch_device()
+
         params = {
             'model_name': model,
             'dataset': dataset,
@@ -92,44 +89,21 @@ def run(
             verbose=False
         )
 
-        y_val_pred = []
-        y_val_true = []
-        X_val_indices = []
         model.eval()
-        with torch.no_grad():
-            for x_batch, y_batch, mask_batch, _ in dataloaders['val']:
-                X_val_indices.extend([torch.tensor([word_index for word_index in sent if word_index != word_to_ix[PAD]]) for sent in x_batch])
-
-                x_batch, mask_batch = x_batch.to(device), mask_batch.to(device)
-                y_batch_pred = model(x_batch, mask_batch)
-
-                y_val_pred.extend(y_batch_pred)
-                y_val_true.extend([[tag.item() for tag in tags if tag >= 0] for tags in y_batch])
-        y_val_pred = [[ix_to_tag[tag] for tag in sentence] for sentence in y_val_pred]
-        y_val_true = [[ix_to_tag[tag] for tag in sentence] for sentence in y_val_true]
-
-        unk_foreach_tag = count_unk_foreach_tag(X_val_indices, y_val_true, labels, word_to_ix[UNK])
-        neptune_logger.log_json('results/unk_foreach_tag', unk_foreach_tag)
-
-        conf = get_model_mean_confidence(model, X_val_indices, device)
-        neptune_logger.log_param('metrics/confidence', conf)
-
-        y_val_true_flat = flatten_list(y_val_true)
-        y_val_pred_flat = flatten_list(y_val_pred)
-
-        neptune_logger.log_param('metrics/f1_weighted', metrics.f1_score(y_val_true_flat, y_val_pred_flat, average='weighted', labels=labels))
-        neptune_logger.log_param('metrics/precision_weighted', metrics.precision_score(y_val_true_flat, y_val_pred_flat, average='weighted', labels=labels))
-        neptune_logger.log_param('metrics/recall_weighted', metrics.recall_score(y_val_true_flat, y_val_pred_flat, average='weighted', labels=labels))
-        neptune_logger.log_param('metrics/accuracy', metrics.accuracy_score(y_val_true_flat, y_val_pred_flat))
-
-        neptune_logger.log_txt('metrics/flat_classification_report', metrics.classification_report(y_val_true_flat, y_val_pred_flat, labels=labels, digits=3))
-
-        df_predicted, df_actual, fig, matched_indices, false_positive_indices, false_negative_indices = DataAnalyzer.analyze(
-            X=[[ix_to_word[word_idx.item()] for word_idx in word_indices] for word_indices in X_val_indices],
-            y_true=y_val_true,
-            y_pred=y_val_pred,
-            keys=labels
+        eval_res = evaluate_model(
+            model=model,
+            dataloader=dataloaders['val'],
+            pad_idx=word_to_ix[PAD],
+            device=device,
+            ix_to_tag=ix_to_tag,
+            ix_to_word=ix_to_word,
+            unk_idx=word_to_ix[UNK],
+            labels=labels
         )
-        neptune_logger.log_figure('results/diagram', fig)
-        neptune_logger.log_colorized_table('results/predicted', df_predicted, matched_indices, false_positive_indices, false_negative_indices)
-        neptune_logger.log_table('results/actual', df_actual)
+
+        neptune_logger.log_param('metrics', eval_res['metrics'])
+        neptune_logger.log_json('results/unk_foreach_tag', eval_res['unk_foreach_tag'])
+        neptune_logger.log_txt('metrics/flat_classification_report', eval_res['flat_classification_report'])
+        neptune_logger.log_figure('results/diagram', eval_res['fig'])
+        neptune_logger.log_colorized_table('results/predicted', eval_res['df_predicted'], eval_res['matched_indices'], eval_res['false_positive_indices'], eval_res['false_negative_indices'])
+        neptune_logger.log_table('results/actual', eval_res['df_actual'])

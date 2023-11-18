@@ -76,12 +76,10 @@ class CustomDataset(Dataset):
         return prepared_data
 
     def sentence_to_indices(self, sentence):
-        return [
-            self.word_to_ix[word] if word in self.word_to_ix else self.unk_idx for word in sentence
-        ]
+        return [self.word_to_ix.get(word, self.unk_idx) for word in sentence]
 
     def tags_to_indices(self, tags):
-        return [self.tag_to_ix[tag] for tag in tags]
+        return [self.tag_to_ix.get(tag, len(self.tag_to_ix)) for tag in tags]
 
     @staticmethod
     def number2words(number) -> List[str]:

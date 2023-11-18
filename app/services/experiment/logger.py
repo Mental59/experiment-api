@@ -11,17 +11,20 @@ from ..dataset_processor.colorizer import colorize_html_table
 
 class NeptuneLogger:          
     def __init__(self, project: str, api_token: str) -> None:
+        self.project = project
+        self.api_token = api_token
+        self.run = None
+    
+    def __enter__(self):
         self.run = neptune.init_run(
-            project=project,
-            api_token=api_token,
+            project=self.project,
+            api_token=self.api_token,
             capture_stderr=True,
             capture_stdout=True,
             capture_traceback=True,
             capture_hardware_metrics=True,
             dependencies='infer'
         )
-    
-    def __enter__(self):
         return self
     
     def __exit__(self, exc_type, exc_val, exc_tbf):
