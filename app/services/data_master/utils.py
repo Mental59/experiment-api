@@ -7,7 +7,7 @@ __all__ = [
 ]
 
 
-def count_unk_foreach_tag(X_test, y_true, classes, unk_index):
+def count_unk_foreach_tag(X_test, y_true, classes, unk_index) -> dict[str, float]:
     unk_counter = Counter()
     word_counter = Counter()
 

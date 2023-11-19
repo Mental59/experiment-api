@@ -2,6 +2,8 @@ import matplotlib.pyplot as plt
 from matplotlib import style
 import pandas as pd
 
+from ...constants.nn import UNKNOWN_TAG, INPUT_TAG
+
 
 class DataAnalyzer:
     """Class for analyzing results"""
@@ -15,37 +17,44 @@ class DataAnalyzer:
 
         predicted = []
         actual = []
+        keys_to_analyze = keys + [UNKNOWN_TAG]
 
         for words, true_tags, pred_tags in zip(X, y_true, y_pred):
 
-            predicted_example = dict.fromkeys(keys, '')
-            actual_example = dict.fromkeys(keys, '')
+            predicted_example = dict.fromkeys(keys_to_analyze, '')
+            actual_example = dict.fromkeys(keys_to_analyze + [INPUT_TAG], '')
 
             for word, true_tag, pred_tag in zip(words, true_tags, pred_tags):
                 if true_tag in actual_example.keys():
                     actual_example[true_tag] += f'{word} '
+                else:
+                    actual_example[UNKNOWN_TAG] += f'{word} '
 
                 if pred_tag in predicted_example.keys():
                     predicted_example[pred_tag] += f'{word} '
+                else:
+                    predicted_example[UNKNOWN_TAG] += f'{word} '
+                
+                actual_example[INPUT_TAG] += f'{word} '
 
             actual.append({key: value.rstrip() for key, value in actual_example.items()})
             predicted.append({key: value.rstrip() for key, value in predicted_example.items()})
 
-        df_actual = pd.DataFrame({key: [wine.get(key) for wine in actual] for key in keys})
-        df_predicted = pd.DataFrame({key: [wine.get(key) for wine in predicted] for key in keys})
+        df_actual = pd.DataFrame({key: [wine.get(key) for wine in actual] for key in keys_to_analyze + [INPUT_TAG]})
+        df_predicted = pd.DataFrame({key: [wine.get(key) for wine in predicted] for key in keys_to_analyze})
 
-        matches = dict.fromkeys(keys + ['All'], 0)
+        matches = dict.fromkeys(keys_to_analyze + ['All'], 0)
         matched_indices = []
-        false_negative = dict.fromkeys(keys, 0)
+        false_negative = dict.fromkeys(keys_to_analyze, 0)
         false_negative_indices = []
-        false_positive = dict.fromkeys(keys, 0)
+        false_positive = dict.fromkeys(keys_to_analyze, 0)
         false_positive_indices = []
 
         for index, row in df_predicted.iterrows():
 
             flag_all = True
 
-            for col_index, column in enumerate(keys):
+            for col_index, column in enumerate(keys_to_analyze):
 
                 if row[column] == df_actual.iloc[index][column]:
 

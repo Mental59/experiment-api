@@ -12,6 +12,8 @@ from .bilstm_crf import BiLSTM_CRF
 from .custom_dataset import CustomDataset
 from ..data_master import count_unk_foreach_tag, DataAnalyzer
 from ...services.experiment.logger import NeptuneLogger
+from ...models.ml.eval_res import MetricsEvaluateRes, EvaluateRes
+from ...constants.nn import UNKNOWN_TAG
 
 
 def train(
@@ -95,12 +97,12 @@ def train(
 
 def evaluate_model(
         model: BiLSTM_CRF,
+        dataset: CustomDataset,
         dataloader: DataLoader,
         pad_idx: int,
         unk_idx: int,
         device: str,
         ix_to_tag: dict[int, str],
-        ix_to_word: dict[int, str],
         labels: list[str]
     ):
     y_val_pred = []
@@ -117,8 +119,8 @@ def evaluate_model(
             y_val_pred.extend(y_batch_pred)
             y_val_true.extend([[tag.item() for tag in tags if tag >= 0] for tags in y_batch])
 
-    y_val_pred = [[ix_to_tag.get(tag, 'UNKNOWN') for tag in sentence] for sentence in y_val_pred]
-    y_val_true = [[ix_to_tag.get(tag, 'UNKNOWN') for tag in sentence] for sentence in y_val_true]
+    y_val_pred = [[ix_to_tag.get(tag, UNKNOWN_TAG) for tag in sentence] for sentence in y_val_pred]
+    y_val_true = [[ix_to_tag.get(tag, UNKNOWN_TAG) for tag in sentence] for sentence in y_val_true]
 
     unk_foreach_tag = count_unk_foreach_tag(X_val_indices, y_val_true, labels, unk_idx)
     conf = get_model_mean_confidence(model, X_val_indices, device)
@@ -126,33 +128,34 @@ def evaluate_model(
     y_val_true_flat = flatten_list(y_val_true)
     y_val_pred_flat = flatten_list(y_val_pred)
 
-    m = {
-        'f1_weighted': metrics.f1_score(y_val_true_flat, y_val_pred_flat, average='weighted', labels=labels),
-        'precision_weighted': metrics.precision_score(y_val_true_flat, y_val_pred_flat, average='weighted', labels=labels),
-        'recall_weighted': metrics.recall_score(y_val_true_flat, y_val_pred_flat, average='weighted', labels=labels),
-        'accuracy': metrics.accuracy_score(y_val_true_flat, y_val_pred_flat),
-        'confidence': conf
-    }
+    m = MetricsEvaluateRes(
+        f1_weighted=metrics.f1_score(y_val_true_flat, y_val_pred_flat, average='weighted', labels=labels),
+        precision_weighted=metrics.precision_score(y_val_true_flat, y_val_pred_flat, average='weighted', labels=labels),
+        recall_weighted=metrics.recall_score(y_val_true_flat, y_val_pred_flat, average='weighted', labels=labels),
+        accuracy=metrics.accuracy_score(y_val_true_flat, y_val_pred_flat),
+        confidence=conf
+    )
+
     flat_classification_report = metrics.classification_report(y_val_true_flat, y_val_pred_flat, labels=labels, digits=3)
 
     df_predicted, df_actual, fig, matched_indices, false_positive_indices, false_negative_indices = DataAnalyzer.analyze(
-        X=[[ix_to_word[word_idx.item()] for word_idx in word_indices] for word_indices in X_val_indices],
+        X=[sentence for sentence, _ in dataset.raw_data()],
         y_true=y_val_true,
         y_pred=y_val_pred,
         keys=labels
     )
 
-    return {
-        'unk_foreach_tag': unk_foreach_tag,
-        'metrics': m,
-        'flat_classification_report': flat_classification_report,
-        'df_predicted': df_predicted,
-        'df_actual': df_actual,
-        'fig': fig,
-        'matched_indices': matched_indices,
-        'false_positive_indices': false_positive_indices,
-        'false_negative_indices': false_negative_indices
-    }
+    return EvaluateRes(
+        unk_foreach_tag=unk_foreach_tag,
+        metrics=m,
+        flat_classification_report=flat_classification_report,
+        df_predicted=df_predicted,
+        df_actual=df_actual,
+        fig=fig,
+        matched_indices=matched_indices,
+        false_positive_indices=false_positive_indices,
+        false_negative_indices=false_negative_indices
+    )
 
 
 def plot_losses(losses, figsize=(12, 8), savepath: str = None, show=True):

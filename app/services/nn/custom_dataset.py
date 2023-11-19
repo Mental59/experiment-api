@@ -26,10 +26,10 @@ class CustomDataset(Dataset):
 
     def __init__(
         self,
-        data,
-        tag_to_ix,
-        word_to_ix,
-        freq_dict: Dict[str, pd.DataFrame] = None,
+        data: list[tuple[list[str], list[str]]],
+        tag_to_ix: dict[str, int],
+        word_to_ix: dict[str, int],
+        freq_dict: dict[str, pd.DataFrame]=None,
         convert_nums2words=False
     ):
         super(CustomDataset, self).__init__()

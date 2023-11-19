@@ -29,7 +29,6 @@ def run(
         sents = dataset_generator.get_sents_from_dataset(dataset, case_sensitive=train_run_params['case_sensitive'])
         unknown_labels = dataset_analyzer.sents_has_unknown_labels(sents, tag_to_ix)
         ix_to_tag = dataset_generator.generate_ix_to_key(tag_to_ix)
-        ix_to_word = dataset_generator.generate_ix_to_key(word_to_ix)
         labels = dataset_generator.generate_labels(tag_to_ix)
 
         params = {
@@ -55,20 +54,18 @@ def run(
 
         eval_res = evaluate_model(
             model=model,
+            dataset=dataset,
             dataloader=dataloader,
             pad_idx=word_to_ix[PAD],
             device=device,
             ix_to_tag=ix_to_tag,
-            ix_to_word=ix_to_word,
             unk_idx=word_to_ix[UNK],
             labels=labels
         )
         
-        neptune_logger.log_param('metrics', eval_res['metrics'])
-        neptune_logger.log_json('results/unk_foreach_tag', eval_res['unk_foreach_tag'])
-        neptune_logger.log_txt('metrics/flat_classification_report', eval_res['flat_classification_report'])
-        neptune_logger.log_figure('results/diagram', eval_res['fig'])
-        neptune_logger.log_colorized_table('results/predicted', eval_res['df_predicted'], eval_res['matched_indices'], eval_res['false_positive_indices'], eval_res['false_negative_indices'])
-        neptune_logger.log_table('results/actual', eval_res['df_actual'])
-
-        # TODO: unknown words appear as UNK in resulted tables
+        neptune_logger.log_param('metrics', eval_res.metrics.model_dump())
+        neptune_logger.log_json('results/unk_foreach_tag', eval_res.unk_foreach_tag)
+        neptune_logger.log_txt('metrics/flat_classification_report', eval_res.flat_classification_report)
+        neptune_logger.log_figure('results/diagram', eval_res.fig)
+        neptune_logger.log_colorized_table('results/predicted', eval_res.df_predicted, eval_res.matched_indices, eval_res.false_positive_indices, eval_res.false_negative_indices)
+        neptune_logger.log_table('results/actual', eval_res.df_actual)

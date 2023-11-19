@@ -11,7 +11,7 @@ def colorize_html_table(
     false_negative_indices: list[tuple[int, int]],
     html_table_content: str
 ):
-    bs = BeautifulSoup(html_table_content)
+    bs = BeautifulSoup(html_table_content, features='html.parser')
     cells = [
         row.find_all('td', recursive=False) for row in bs.find('tbody').find_all('tr', recursive=False)
     ]

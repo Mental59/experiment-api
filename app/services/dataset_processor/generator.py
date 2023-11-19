@@ -2,7 +2,7 @@ import os
 
 from ...constants.artifacts import PATHS
 from ..data_master.data_generator import DataGenerator
-from ...constants.nn import NUM_WORDS, PAD, UNK
+from ...constants.nn import NUM_WORDS, PAD, UNK, OTHER_TAG
 
 
 def get_sents_from_dataset(dataset: str, case_sensitive: bool = False) -> list[tuple[list[str], list[str]]]:
@@ -25,6 +25,9 @@ def generate_tag_to_ix_from_sents(sents: list[tuple[list[str], list[str]]]) -> d
 
     for _, labels in sents:
         labels_set.update(labels)
+
+    if OTHER_TAG not in labels_set:
+        labels_set.add(OTHER_TAG)
 
     return {key: index for index, key in enumerate(sorted(labels_set))}
 
@@ -70,4 +73,3 @@ def get_labels_from_sents(sents: list[tuple[list[str], list[str]]]) -> list[str]
         labels_set.update(labels)
     
     return list(labels_set)
- 

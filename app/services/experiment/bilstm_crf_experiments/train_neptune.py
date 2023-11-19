@@ -60,7 +60,6 @@ def run(
         neptune_logger.log_json('data/tag_to_ix', tag_to_ix)
 
         word_to_ix = dataset_generator.generate_word_to_ix(sents, num2words=num2words, case_sensitive=case_sensitive)
-        ix_to_word = dataset_generator.generate_ix_to_key(word_to_ix)
         neptune_logger.log_json('data/word_to_ix', word_to_ix)
 
         train_data, val_data = train_test_split(sents, test_size=test_size)
@@ -93,17 +92,17 @@ def run(
         eval_res = evaluate_model(
             model=model,
             dataloader=dataloaders['val'],
+            dataset=val_dataset,
             pad_idx=word_to_ix[PAD],
             device=device,
             ix_to_tag=ix_to_tag,
-            ix_to_word=ix_to_word,
             unk_idx=word_to_ix[UNK],
             labels=labels
         )
 
-        neptune_logger.log_param('metrics', eval_res['metrics'])
-        neptune_logger.log_json('results/unk_foreach_tag', eval_res['unk_foreach_tag'])
-        neptune_logger.log_txt('metrics/flat_classification_report', eval_res['flat_classification_report'])
-        neptune_logger.log_figure('results/diagram', eval_res['fig'])
-        neptune_logger.log_colorized_table('results/predicted', eval_res['df_predicted'], eval_res['matched_indices'], eval_res['false_positive_indices'], eval_res['false_negative_indices'])
-        neptune_logger.log_table('results/actual', eval_res['df_actual'])
+        neptune_logger.log_param('metrics', eval_res.metrics.model_dump())
+        neptune_logger.log_json('results/unk_foreach_tag', eval_res.unk_foreach_tag)
+        neptune_logger.log_txt('metrics/flat_classification_report', eval_res.flat_classification_report)
+        neptune_logger.log_figure('results/diagram', eval_res.fig)
+        neptune_logger.log_colorized_table('results/predicted', eval_res.df_predicted, eval_res.matched_indices, eval_res.false_positive_indices, eval_res.false_negative_indices)
+        neptune_logger.log_table('results/actual', eval_res.df_actual)
