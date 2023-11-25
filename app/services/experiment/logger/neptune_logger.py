@@ -6,12 +6,13 @@ from neptune.types import File
 import pandas as pd
 from matplotlib.figure import Figure
 
-from ..dataset_processor.colorizer import colorize_html_table
+from ...dataset_processor.colorizer import colorize_html_table
+from .experiment_logger import ExperimentLogger
 
 
-class NeptuneLogger:          
+class NeptuneLogger(ExperimentLogger):          
     def __init__(self, project: str, api_token: str) -> None:
-        self.project = project
+        super().__init__(project)
         self.api_token = api_token
         self.run = None
     

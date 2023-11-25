@@ -11,7 +11,7 @@ from sklearn import metrics
 from .bilstm_crf import BiLSTM_CRF
 from .custom_dataset import CustomDataset
 from ..data_master import count_unk_foreach_tag, DataAnalyzer
-from ...services.experiment.logger import NeptuneLogger
+from ...services.experiment.logger.neptune_logger import NeptuneLogger
 from ...models.ml.eval_res import MetricsEvaluateRes, EvaluateRes
 from ...constants.nn import UNKNOWN_TAG
 

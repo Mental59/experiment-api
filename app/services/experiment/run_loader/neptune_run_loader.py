@@ -4,11 +4,13 @@ import json
 import neptune
 import torch
 
-from ...constants.artifacts import PATHS
+from ....constants.artifacts import PATHS
+from .run_loader import RunLoader
 
 
-class NeptuneRunLoader:
-    def __init__(self, project: str, api_token: str, run_id: str) -> None:
+class NeptuneRunLoader(RunLoader):
+    def __init__(self, project: str, run_id: str, api_token: str) -> None:
+        super().__init__(project=project, run_id=run_id)
         self.run = neptune.init_run(with_id=run_id, mode='read-only', api_token=api_token, project=project)
 
     def get_params(self) -> dict[str, str | int | float | bool]:
