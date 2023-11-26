@@ -1,5 +1,4 @@
 from abc import ABCMeta, abstractmethod
-from typing import Iterable
 
 import pandas as pd
 from matplotlib.figure import Figure
@@ -26,7 +25,7 @@ class ExperimentLogger(metaclass=ABCMeta):
         pass
     
     @abstractmethod
-    def log_by_path(self, name: str, path: str) -> None:
+    def log_dataset(self, name: str, dataset_path: str) -> None:
         pass
     
     @abstractmethod
@@ -61,5 +60,5 @@ class ExperimentLogger(metaclass=ABCMeta):
         pass
     
     @abstractmethod
-    def add_tags(self, tags: str | Iterable[str]) -> None:
+    def add_tags(self, tags: dict[str]) -> None:
         pass

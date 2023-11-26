@@ -52,10 +52,10 @@ def run(
             'num2words': num2words,
         }
         experiment_logger.log_param('parameters', params)
-        experiment_logger.add_tags([model, 'train', run_name])
+        experiment_logger.add_tags(dict(model_name=model, mode='train', run_name=run_name))
 
         sents = dataset_generator.get_sents_from_dataset(dataset, case_sensitive=case_sensitive)
-        experiment_logger.log_by_path('data/dataset', dataset_generator.get_dataset_path(dataset))
+        experiment_logger.log_dataset('data/dataset', dataset_generator.get_dataset_path(dataset))
 
         tag_to_ix = dataset_generator.generate_tag_to_ix_from_sents(sents)
         ix_to_tag = dataset_generator.generate_ix_to_key(tag_to_ix)
@@ -74,7 +74,7 @@ def run(
 
         vocab_size = len(word_to_ix)
         num_tags = len(tag_to_ix)
-        labels=dataset_generator.generate_labels(tag_to_ix)
+        labels = dataset_generator.generate_labels(tag_to_ix)
         model = BiLSTM_CRF(vocab_size=vocab_size, num_tags=num_tags, embedding_dim=embedding_dim, hidden_dim=hidden_dim, padding_idx=word_to_ix[PAD]).to(device)
         optimizer = Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
         scheduler = ReduceLROnPlateau(optimizer, factor=scheduler_factor, patience=scheduler_patience)
@@ -86,7 +86,7 @@ def run(
             device=device,
             num_epochs=num_epochs,
             scheduler=scheduler,
-            neptune_logger=experiment_logger,
+            experiment_logger=experiment_logger,
             verbose=False
         )
 

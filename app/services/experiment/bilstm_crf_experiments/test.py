@@ -29,7 +29,7 @@ def run(
         model_state_dict = train_run.get_model_state_dict()
 
         sents = dataset_generator.get_sents_from_dataset(dataset, case_sensitive=train_run_params['case_sensitive'])
-        experiment_logger.log_by_path('data/dataset', dataset_generator.get_dataset_path(dataset))
+        experiment_logger.log_dataset('data/dataset', dataset_generator.get_dataset_path(dataset))
         
         unknown_labels = dataset_analyzer.sents_has_unknown_labels(sents, tag_to_ix)
         ix_to_tag = dataset_generator.generate_ix_to_key(tag_to_ix)
@@ -43,7 +43,7 @@ def run(
         }
         experiment_logger.log_param('parameters', params)
         experiment_logger.log_param('train_run_parameters', train_run_params)
-        experiment_logger.add_tags([train_run_params['model_name'], 'test', run_name])
+        experiment_logger.add_tags(dict(model_name=train_run_params['model_name'], mode='test', run_name=run_name))
 
         vocab_size = len(word_to_ix)
         num_tags = len(tag_to_ix)

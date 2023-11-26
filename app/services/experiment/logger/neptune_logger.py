@@ -1,5 +1,4 @@
 import json
-from typing import Iterable
 
 import neptune
 from neptune.types import File
@@ -37,8 +36,8 @@ class NeptuneLogger(ExperimentLogger):
     def log_txt(self, name: str, data: str):
         self.run[name].upload(File.from_content(data))
     
-    def log_by_path(self, name: str, path: str):
-        self.run[name].upload(path)
+    def log_dataset(self, name: str, dataset_path: str):
+        self.run[name].upload(dataset_path)
     
     def log_table(self, name: str, df: pd.DataFrame):
         self.run[name].upload(File.as_html(df))
@@ -71,5 +70,5 @@ class NeptuneLogger(ExperimentLogger):
     def append_param(self, name: str, param):
         self.run[name].append(param)
     
-    def add_tags(self, tags: str | Iterable[str]):
-        self.run['sys/tags'].add(tags)
+    def add_tags(self, tags: dict[str]) -> None:
+        self.run['sys/tags'].add(tags.values())

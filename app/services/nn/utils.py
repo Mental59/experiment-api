@@ -11,7 +11,7 @@ from sklearn import metrics
 from .bilstm_crf import BiLSTM_CRF
 from .custom_dataset import CustomDataset
 from ..data_master import count_unk_foreach_tag, DataAnalyzer
-from ...services.experiment.logger.neptune_logger import NeptuneLogger
+from ...services.experiment.logger.experiment_logger import ExperimentLogger
 from ...models.ml.eval_res import MetricsEvaluateRes, EvaluateRes
 from ...constants.nn import UNKNOWN_TAG
 
@@ -22,7 +22,7 @@ def train(
         dataloaders,
         device,
         num_epochs,
-        neptune_logger: Optional[NeptuneLogger]=None,
+        experiment_logger: Optional[ExperimentLogger] = None,
         scheduler=None,
         verbose=True):
     losses = {'train': [], 'val': []}
@@ -31,9 +31,6 @@ def train(
 
     for epoch in tqdm(range(1, num_epochs + 1)):
         losses_per_epoch = {'train': 0.0, 'val': 0.0}
-
-        if neptune_logger is not None:
-            neptune_logger.log_param('epoch', epoch)
 
         model.train()
         for x_batch, y_batch, mask_batch, custom_features in dataloaders['train']:
@@ -46,8 +43,8 @@ def train(
             loss.backward()
             optimizer.step()
 
-            if neptune_logger is not None:
-                neptune_logger.append_param('train/batch/loss', loss.item())
+            if experiment_logger is not None:
+                experiment_logger.append_param('train/batch/loss', loss.item())
 
             losses_per_epoch['train'] += loss.item()
 
@@ -60,8 +57,8 @@ def train(
                 custom_features = custom_features.to(device)
                 loss = model.neg_log_likelihood(x_batch, y_batch, mask_batch, custom_features)
 
-                if neptune_logger is not None:
-                    neptune_logger.append_param('val/batch/loss', loss.item())
+                if experiment_logger is not None:
+                    experiment_logger.append_param('val/batch/loss', loss.item())
 
                 losses_per_epoch['val'] += loss.item()
 
@@ -85,9 +82,9 @@ def train(
                 sep=', '
             )
 
-    if neptune_logger is not None:
+    if experiment_logger is not None:
         model_buffer.seek(0)
-        neptune_logger.log_binary('model_checkpoints/best_model', model_buffer.read(), 'pth')
+        experiment_logger.log_binary('model_checkpoints/best_model', model_buffer.read(), 'pth')
 
         model_buffer.seek(0)
         model.load_state_dict(torch.load(model_buffer))
