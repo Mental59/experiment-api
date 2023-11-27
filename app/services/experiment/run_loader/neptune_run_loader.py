@@ -17,15 +17,15 @@ class NeptuneRunLoader(RunLoader):
         return self.run['parameters'].fetch()
     
     def get_model_state_dict(self):
-        self.run['model_checkpoints/best_model'].download(destination=PATHS['TEMP_PATH'])
-        return torch.load(os.path.join(PATHS['TEMP_PATH'], 'best_model.pth'))
+        self.run['model_checkpoints/best_model'].download(destination=PATHS.TEMP_PATH)
+        return torch.load(os.path.join(PATHS.TEMP_PATH, 'best_model.pth'))
 
     def get_word_to_ix(self) -> dict[str, int]:
-        self.run['data/word_to_ix'].download(destination=PATHS['TEMP_PATH'])
-        with open(os.path.join(PATHS['TEMP_PATH'], 'word_to_ix.json'), encoding='utf-8') as file:
+        self.run['data/word_to_ix'].download(destination=PATHS.TEMP_PATH)
+        with open(os.path.join(PATHS.TEMP_PATH, 'word_to_ix.json'), encoding='utf-8') as file:
             return json.load(file)
 
     def get_tag_to_ix(self) -> dict[str, int]:
-        self.run['data/tag_to_ix'].download(destination=PATHS['TEMP_PATH'])
-        with open(os.path.join(PATHS['TEMP_PATH'], 'tag_to_ix.json'), encoding='utf-8') as file:
+        self.run['data/tag_to_ix'].download(destination=PATHS.TEMP_PATH)
+        with open(os.path.join(PATHS.TEMP_PATH, 'tag_to_ix.json'), encoding='utf-8') as file:
             return json.load(file)

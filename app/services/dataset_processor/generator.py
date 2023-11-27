@@ -17,7 +17,7 @@ def get_sents_from_dataset(dataset: str, case_sensitive: bool = False) -> list[t
 
 
 def get_dataset_path(dataset: str) -> str:
-    return os.path.join(PATHS['DATASETS_PATH'], f'{dataset}.txt')
+    return os.path.join(PATHS.DATASETS_PATH, f'{dataset}.txt')
 
 
 def generate_tag_to_ix_from_sents(sents: list[tuple[list[str], list[str]]]) -> dict[str, int]:

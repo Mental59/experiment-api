@@ -34,7 +34,7 @@ class CustomDataset(Dataset):
     ):
         super(CustomDataset, self).__init__()
         self.convert_nums2words = convert_nums2words
-        self.features_path_dir = os.path.join(PATHS['FEATURES_PATH'], str(uuid.uuid4()))
+        self.features_path_dir = os.path.join(PATHS.FEATURES_PATH, str(uuid.uuid4()))
         self.word_to_ix = word_to_ix
         self.tag_to_ix = tag_to_ix
         self.pad_idx = word_to_ix[PAD]
