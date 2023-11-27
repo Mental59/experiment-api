@@ -14,6 +14,7 @@ from ..data_master import count_unk_foreach_tag, DataAnalyzer
 from ...services.experiment.logger.experiment_logger import ExperimentLogger
 from ...models.ml.eval_res import MetricsEvaluateRes, EvaluateRes
 from ...constants.nn import UNKNOWN_TAG
+from ...constants.save_keys import *
 
 
 def train(
@@ -44,7 +45,7 @@ def train(
             optimizer.step()
 
             if experiment_logger is not None:
-                experiment_logger.append_param('train/batch/loss', loss.item())
+                experiment_logger.log_metric(TRAIN_BATCH_LOSS_SAVE_KEY, loss.item())
 
             losses_per_epoch['train'] += loss.item()
 
@@ -58,7 +59,7 @@ def train(
                 loss = model.neg_log_likelihood(x_batch, y_batch, mask_batch, custom_features)
 
                 if experiment_logger is not None:
-                    experiment_logger.append_param('val/batch/loss', loss.item())
+                    experiment_logger.log_metric(VAL_BATCH_LOSS_SAVE_KEY, loss.item())
 
                 losses_per_epoch['val'] += loss.item()
 
@@ -84,7 +85,7 @@ def train(
 
     if experiment_logger is not None:
         model_buffer.seek(0)
-        experiment_logger.log_binary('model_checkpoints/best_model', model_buffer.read(), 'pth')
+        experiment_logger.log_model_pth(BEST_MODEL_SAVE_KEY, model_buffer.read())
 
         model_buffer.seek(0)
         model.load_state_dict(torch.load(model_buffer))

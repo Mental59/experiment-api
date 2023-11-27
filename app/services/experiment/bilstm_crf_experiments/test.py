@@ -9,6 +9,7 @@ from ....services.experiment.logger.utils import get_experiment_tracker
 from ....services.experiment.run_loader.utils import get_run_loader
 from ....constants.nn import PAD, UNK
 from ....models.ml.experiment_tracker_enum import ExperimentTrackerEnum
+from ....constants.save_keys import *
 
 
 def run(
@@ -23,13 +24,13 @@ def run(
         device = experiment_setupper.get_torch_device()
 
         train_run = get_run_loader(experiment_tracker=experiment_tracker, project=project, run_id=train_run_id, **kwargs)
-        train_run_params = train_run.get_params()
-        word_to_ix = train_run.get_word_to_ix()
-        tag_to_ix = train_run.get_tag_to_ix()
-        model_state_dict = train_run.get_model_state_dict()
+        train_run_params = train_run.get_params(PARAMETERS_SAVE_KEY)
+        word_to_ix = train_run.get_word_to_ix(WORD_TO_IX_SAVE_KEY)
+        tag_to_ix = train_run.get_tag_to_ix(TAG_TO_IX_SAVE_KEY)
+        model_state_dict = train_run.get_model_state_dict(BEST_MODEL_SAVE_KEY)
 
         sents = dataset_generator.get_sents_from_dataset(dataset, case_sensitive=train_run_params['case_sensitive'])
-        experiment_logger.log_dataset('data/dataset', dataset_generator.get_dataset_path(dataset))
+        experiment_logger.log_dataset(DATASET_SAVE_KEY, dataset_generator.get_dataset_path(dataset))
         
         unknown_labels = dataset_analyzer.sents_has_unknown_labels(sents, tag_to_ix)
         ix_to_tag = dataset_generator.generate_ix_to_key(tag_to_ix)
@@ -41,8 +42,8 @@ def run(
             'device': device,
             'unknown_labels': unknown_labels
         }
-        experiment_logger.log_param('parameters', params)
-        experiment_logger.log_param('train_run_parameters', train_run_params)
+        experiment_logger.log_params(PARAMETERS_SAVE_KEY, params)
+        experiment_logger.log_params(TRAIN_PARAMETERS_SAVE_KEY, train_run_params)
         experiment_logger.add_tags(dict(model_name=train_run_params['model_name'], mode='test', run_name=run_name))
 
         vocab_size = len(word_to_ix)
@@ -67,9 +68,15 @@ def run(
             labels=labels
         )
         
-        experiment_logger.log_param('metrics', eval_res.metrics.model_dump())
-        experiment_logger.log_json('results/unk_foreach_tag', eval_res.unk_foreach_tag)
-        experiment_logger.log_txt('metrics/flat_classification_report', eval_res.flat_classification_report)
-        experiment_logger.log_figure('results/diagram', eval_res.fig)
-        experiment_logger.log_colorized_table('results/predicted', eval_res.df_predicted, eval_res.matched_indices, eval_res.false_positive_indices, eval_res.false_negative_indices)
-        experiment_logger.log_table('results/actual', eval_res.df_actual)
+        experiment_logger.log_metrics(eval_res.metrics.model_dump())
+        experiment_logger.log_json(UNK_FOREACH_TAG_SAVE_KEY, eval_res.unk_foreach_tag)
+        experiment_logger.log_txt(FLAT_CLASSIFICATION_REPORT_SAVE_KEY, eval_res.flat_classification_report)
+        experiment_logger.log_figure(DIAGRAM_SAVE_KEY, eval_res.fig)
+        experiment_logger.log_colorized_table(
+            PREDICTED_DF_SAVE_KEY,
+            eval_res.df_predicted,
+            eval_res.matched_indices,
+            eval_res.false_positive_indices,
+            eval_res.false_negative_indices
+        )
+        experiment_logger.log_table(ACTUAL_DF_SAVE_KEY, eval_res.df_actual)

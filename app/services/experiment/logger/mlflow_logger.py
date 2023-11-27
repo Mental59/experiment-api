@@ -60,19 +60,23 @@ class MLFlowLogger(ExperimentLogger):
             data_path = os.path.join(temp_folder.path, os.path.basename(name)) + '.png'
             figure.savefig(data_path)
             mlflow.log_artifact(data_path, os.path.split(name)[0])
+
+    def log_params(self, name: str, param: dict[str]) -> None:
+        params = {f'{name}/{key}': param[key] for key in param}
+        mlflow.log_params(params)
     
-    def log_param(self, name: str, param) -> None:
-        mlflow.log_param(name, param)
-    
-    def log_binary(self, name: str, data: bytes, extension: str) -> None:
+    def log_model_pth(self, name: str, data: bytes) -> None:
         with TempFolder(os.path.join(PATHS.TEMP_PATH, str(uuid.uuid4()))) as temp_folder:
-            data_path = os.path.join(temp_folder.path, os.path.basename(name)) + f'.{extension}'
+            data_path = os.path.join(temp_folder.path, os.path.basename(name)) + '.pth'
             with open(data_path, 'wb') as file:
                 file.write(data)
             mlflow.log_artifact(data_path, os.path.split(name)[0])
     
-    def append_param(self, name: str, param) -> None:
+    def log_metric(self, name: str, param) -> None:
         mlflow.log_metric(name, param)
+
+    def log_metrics(self, metrics: dict[str, int | float]) -> None:
+        mlflow.log_metrics(metrics)
 
     def add_tags(self, tags: dict[str]) -> None:
         mlflow.set_tags(tags)

@@ -11,3 +11,6 @@ UNK = 'UNK'
 OTHER_TAG = 'Other'
 UNKNOWN_TAG = 'UNKNOWN'
 INPUT_TAG = '<INPUT>'
+
+TRAIN_MODE_NAME = 'train'
+TEST_MODE_NAME = 'test'

@@ -7,17 +7,17 @@ class RunLoader(metaclass=ABCMeta):
         self.run_id = run_id
     
     @abstractmethod
-    def get_params(self) -> dict[str, str | int | float | bool]:
+    def get_params(self, save_key: str) -> dict[str, str | int | float | bool]:
         pass
     
     @abstractmethod
-    def get_model_state_dict(self):
+    def get_model_state_dict(self, save_key: str):
         pass
 
     @abstractmethod
-    def get_word_to_ix(self) -> dict[str, int]:
+    def get_word_to_ix(self, save_key: str) -> dict[str, int]:
         pass
 
     @abstractmethod
-    def get_tag_to_ix(self) -> dict[str, int]:
+    def get_tag_to_ix(self, save_key: str) -> dict[str, int]:
         pass

@@ -61,14 +61,17 @@ class NeptuneLogger(ExperimentLogger):
     def log_figure(self, name: str, figure: Figure):
         self.run[name].upload(figure)
     
-    def log_param(self, name: str, param):
+    def log_params(self, name: str, param: dict[str]):
         self.run[name] = param
+
+    def log_metrics(self, metrics: dict[str, int | float]) -> None:
+        self.run['metrics'] = metrics
     
-    def log_binary(self, name: str, data: bytes, extension: str):
-        self.run[name].upload(File.from_content(data, extension=extension))
+    def log_model_pth(self, name: str, data: bytes):
+        self.run[name].upload(File.from_content(data, extension='pth'))
     
-    def append_param(self, name: str, param):
+    def log_metric(self, name: str, param):
         self.run[name].append(param)
     
     def add_tags(self, tags: dict[str]) -> None:
-        self.run['sys/tags'].add(tags.values())
+        self.run['sys/tags'].add(list(tags.values()))

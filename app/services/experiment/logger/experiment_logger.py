@@ -48,15 +48,19 @@ class ExperimentLogger(metaclass=ABCMeta):
         pass
     
     @abstractmethod
-    def log_param(self, name: str, param) -> None:
+    def log_params(self, name: str, param: dict[str]) -> None:
         pass
     
     @abstractmethod
-    def log_binary(self, name: str, data: bytes, extension: str) -> None:
+    def log_model_pth(self, name: str, data: bytes) -> None:
         pass
     
     @abstractmethod
-    def append_param(self, name: str, param) -> None:
+    def log_metric(self, name: str, param) -> None:
+        pass
+
+    @abstractmethod
+    def log_metrics(self, metrics: dict[str, int | float]) -> None:
         pass
     
     @abstractmethod
