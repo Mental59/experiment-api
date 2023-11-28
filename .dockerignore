@@ -1,2 +1,10 @@
-/venv/
-artifacts/
+venv
+artifacts
+.neptune
+.idea
+.git
+mlruns
+start.bat
+start_reload.bat
+.gitignore
+run_docker.bat
