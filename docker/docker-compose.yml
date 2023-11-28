@@ -10,6 +10,8 @@ services:
       - "5000:3333"
     networks:
       - backend
+    volumes:
+      - backend-data:/usr/src/app/artifacts
     environment:
       - MLFLOW_TRACKING_URI=http://mlflow-server:8080
 
@@ -28,3 +30,4 @@ networks:
 
 volumes:
   mlflow-data:
+  backend-data:
