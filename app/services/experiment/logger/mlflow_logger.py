@@ -9,7 +9,6 @@ from neptune.types import File
 
 from .experiment_logger import ExperimentLogger
 from ...dataset_processor.colorizer import colorize_html_table
-from ....constants.artifacts import PATHS
 from ...file_manager.temp_folder import TempFolder
 
 
@@ -56,7 +55,7 @@ class MLFlowLogger(ExperimentLogger):
         mlflow.log_text(colorized_table, name + '.html')
     
     def log_figure(self, name: str, figure: Figure) -> None:
-        with TempFolder(os.path.join(PATHS.TEMP_PATH, str(uuid.uuid4()))) as temp_folder:
+        with TempFolder(str(uuid.uuid4())) as temp_folder:
             data_path = os.path.join(temp_folder.path, os.path.basename(name)) + '.png'
             figure.savefig(data_path)
             mlflow.log_artifact(data_path, os.path.split(name)[0])
@@ -66,7 +65,7 @@ class MLFlowLogger(ExperimentLogger):
         mlflow.log_params(params)
     
     def log_model_pth(self, name: str, data: bytes) -> None:
-        with TempFolder(os.path.join(PATHS.TEMP_PATH, str(uuid.uuid4()))) as temp_folder:
+        with TempFolder(str(uuid.uuid4())) as temp_folder:
             data_path = os.path.join(temp_folder.path, os.path.basename(name)) + '.pth'
             with open(data_path, 'wb') as file:
                 file.write(data)

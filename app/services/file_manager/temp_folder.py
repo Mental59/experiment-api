@@ -1,10 +1,12 @@
 import os
 import shutil
 
+from ...constants.artifacts import PATHS
+
 
 class TempFolder:
-    def __init__(self, path: str):
-        self.path = path
+    def __init__(self, folder_name: str):
+        self.path = os.path.join(PATHS.TEMP_PATH, folder_name)
 
     def __enter__(self):
         os.makedirs(self.path, exist_ok=True)

@@ -3,9 +3,9 @@ import json
 
 import mlflow
 import torch
-from fastapi import HTTPException
 
 from .run_loader import RunLoader
+from ....services.file_manager.temp_folder import TempFolder
 
 
 class MLFlowRunLoader(RunLoader):
@@ -13,11 +13,6 @@ class MLFlowRunLoader(RunLoader):
         super().__init__(project=project, run_id=run_id)
         self.experiment = mlflow.get_experiment_by_name(project)
         self.run = mlflow.get_run(run_id)
-
-        self.run_location = os.path.join('mlruns', self.experiment.experiment_id, run_id)
-        self.artifacts_location = os.path.join(self.run_location, 'artifacts')
-
-        self.check_folders()
 
     def get_params(self, save_key: str) -> dict[str, str | int | float | bool]:
         params = {}
@@ -40,21 +35,23 @@ class MLFlowRunLoader(RunLoader):
         return params
 
     def get_model_state_dict(self, save_key: str):
-        path = os.path.join(self.artifacts_location, *save_key.split('/')) + '.pth'
-        return torch.load(path)
+        with TempFolder(self.run.info.run_id) as temp_folder:
+            mlflow.artifacts.download_artifacts(
+                run_id=self.run.info.run_id,
+                artifact_path=f'{save_key}.pth',
+                dst_path=temp_folder.path
+            )
+            return torch.load(os.path.join(temp_folder.path, *save_key.split('/')) + '.pth')
 
     def get_word_to_ix(self, save_key: str) -> dict[str, int]:
-        path = os.path.join(self.artifacts_location, *save_key.split('/')) + '.json'
-        return self.__load_json(path)
+        return self.__load_json(save_key)
 
     def get_tag_to_ix(self, save_key: str) -> dict[str, int]:
-        path = os.path.join(self.artifacts_location, *save_key.split('/')) + '.json'
-        return self.__load_json(path)
+        return self.__load_json(save_key)
 
-    @staticmethod
-    def __load_json(path: str):
-        with open(path) as file:
-            return json.load(file)
+    def __load_json(self, save_key: str):
+        content = mlflow.artifacts.load_text(self.run.info.artifact_uri + f'/{save_key}.json')
+        return json.loads(content)
 
     @staticmethod
     def __is_float(s: str):
@@ -63,10 +60,3 @@ class MLFlowRunLoader(RunLoader):
             return True
         except ValueError:
             return False
-
-    def check_folders(self):
-        if not os.path.exists(self.run_location):
-            raise HTTPException(status_code=400, detail=dict(message=f'Run location {self.run_location} does not exist'))
-
-        if not os.path.exists(self.artifacts_location):
-            raise HTTPException(status_code=400, detail=dict(message='No artifacts in the run'))
