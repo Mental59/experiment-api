@@ -7,6 +7,8 @@ from matplotlib.figure import Figure
 
 from ...dataset_processor.colorizer import colorize_html_table
 from .experiment_logger import ExperimentLogger
+from ....models.ml.experiment_run_result import ExperimentRunResult
+from ....models.ml.experiment_tracker_enum import ExperimentTrackerEnum
 
 
 class NeptuneLogger(ExperimentLogger):          
@@ -41,6 +43,13 @@ class NeptuneLogger(ExperimentLogger):
     
     def log_table(self, name: str, df: pd.DataFrame):
         self.run[name].upload(File.as_html(df))
+
+    def get_run_result(self) -> ExperimentRunResult:
+        return ExperimentRunResult(
+            experiment_tracker=ExperimentTrackerEnum.Neptune,
+            url=self.run.get_url(),
+            run_id=self.run['sys/id'].fetch(),
+        )
     
     def log_colorized_table(
         self,

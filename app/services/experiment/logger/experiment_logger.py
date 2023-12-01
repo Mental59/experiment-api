@@ -3,6 +3,8 @@ from abc import ABCMeta, abstractmethod
 import pandas as pd
 from matplotlib.figure import Figure
 
+from ....models.ml.experiment_run_result import ExperimentRunResult
+
 
 class ExperimentLogger(metaclass=ABCMeta):
     def __init__(self, project: str):
@@ -30,6 +32,10 @@ class ExperimentLogger(metaclass=ABCMeta):
     
     @abstractmethod
     def log_table(self, name: str, df: pd.DataFrame) -> None:
+        pass
+
+    @abstractmethod
+    def get_run_result(self) -> ExperimentRunResult:
         pass
     
     @abstractmethod

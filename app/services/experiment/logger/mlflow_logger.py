@@ -10,15 +10,18 @@ from neptune.types import File
 from .experiment_logger import ExperimentLogger
 from ...dataset_processor.colorizer import colorize_html_table
 from ...file_manager.temp_folder import TempFolder
+from ....models.ml.experiment_run_result import ExperimentRunResult
+from ....models.ml.experiment_tracker_enum import ExperimentTrackerEnum
 
 
 class MLFlowLogger(ExperimentLogger):
     def __init__(self, project: str):
         super().__init__(project)
+        self.run = None
     
     def __enter__(self):
         mlflow.set_experiment(experiment_name=self.project)
-        mlflow.start_run()
+        self.run = mlflow.start_run()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tbf):
@@ -37,6 +40,13 @@ class MLFlowLogger(ExperimentLogger):
     
     def log_table(self, name: str, df: pd.DataFrame) -> None:
         mlflow.log_text(File.as_html(df).content.decode('utf-8'), name + '.html')
+
+    def get_run_result(self) -> ExperimentRunResult:
+        return ExperimentRunResult(
+            experiment_tracker=ExperimentTrackerEnum.MLflow,
+            experiment_id=self.run.info.experiment_id,
+            run_id=self.run.info.run_id
+        )
     
     def log_colorized_table(
         self,

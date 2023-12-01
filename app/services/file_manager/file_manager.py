@@ -13,7 +13,3 @@ def clear_temp_dir():
     if os.path.exists(PATHS.TEMP_PATH):
         shutil.rmtree(PATHS.TEMP_PATH)
     os.makedirs(PATHS.TEMP_PATH, exist_ok=True)
-
-
-def get_datasets():
-    return [os.path.splitext(name)[0] for name in os.listdir(PATHS.DATASETS_PATH)]

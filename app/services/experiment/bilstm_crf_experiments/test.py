@@ -80,3 +80,5 @@ def run(
             eval_res.false_negative_indices
         )
         experiment_logger.log_table(ACTUAL_DF_SAVE_KEY, eval_res.df_actual)
+
+        return experiment_logger.get_run_result()

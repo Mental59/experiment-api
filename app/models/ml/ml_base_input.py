@@ -1,7 +1,7 @@
 from pydantic import BaseModel, field_validator
 from fastapi import HTTPException
 
-from ...services.file_manager import file_manager
+from ...services.dataset_processor.loader import get_datasets
 
 
 class MLBaseInput(BaseModel):
@@ -11,7 +11,7 @@ class MLBaseInput(BaseModel):
     @field_validator('dataset')
     @classmethod
     def dataset_must_exist(cls, dataset: str):
-        if dataset not in file_manager.get_datasets():
+        if dataset not in get_datasets():
             raise HTTPException(status_code=400, detail=dict(message=f"Dataset {dataset} doesn't exist"))
         return dataset
     

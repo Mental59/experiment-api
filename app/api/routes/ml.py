@@ -4,13 +4,14 @@ from ...models.ml.ml_train_input import MLTrainExperimentInput
 from ...models.ml.ml_test_input import MLTestExperimentInput
 from ...services.experiment.bilstm_crf_experiments import train as train_runner, test as test_runner
 from ...models.ml.experiment_tracker_enum import ExperimentTrackerEnum
+from ...models.ml.experiment_run_result import ExperimentRunResult
 
 router = APIRouter()
 
 
 @router.post('/train-neptune')
-def train(body: MLTrainExperimentInput, project: str, api_token: str):
-    train_runner.run(
+def train(body: MLTrainExperimentInput, project: str, api_token: str) -> ExperimentRunResult:
+    return train_runner.run(
         project=project,
         run_name=body.run_name,
         api_token=api_token,
@@ -31,8 +32,8 @@ def train(body: MLTrainExperimentInput, project: str, api_token: str):
 
 
 @router.post('/test-neptune')
-def test(body: MLTestExperimentInput, project: str, api_token: str):
-    test_runner.run(
+def test(body: MLTestExperimentInput, project: str, api_token: str) -> ExperimentRunResult:
+    return test_runner.run(
         project=project,
         run_name=body.run_name,
         dataset=body.dataset,
@@ -43,8 +44,8 @@ def test(body: MLTestExperimentInput, project: str, api_token: str):
 
 
 @router.post('/train-mlflow')
-def train(body: MLTrainExperimentInput, project: str):
-    train_runner.run(
+def train(body: MLTrainExperimentInput, project: str) -> ExperimentRunResult:
+    return train_runner.run(
         project=project,
         run_name=body.run_name,
         dataset=body.dataset,
@@ -64,8 +65,8 @@ def train(body: MLTrainExperimentInput, project: str):
 
 
 @router.post('/test-mlflow')
-def test(body: MLTestExperimentInput, project: str):
-    test_runner.run(
+def test(body: MLTestExperimentInput, project: str) -> ExperimentRunResult:
+    return test_runner.run(
         project=project,
         run_name=body.run_name,
         dataset=body.dataset,
