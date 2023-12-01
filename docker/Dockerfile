@@ -2,10 +2,12 @@ FROM python:3.10.9-slim
 
 WORKDIR /usr/src/app
 
-COPY . .
+COPY requirements.txt requirements.txt
 
 RUN pip install -r requirements.txt --no-cache-dir
 RUN pip install torch==2.1.0 torchvision==0.16.0 torchaudio==2.1.0 --index-url https://download.pytorch.org/whl/cu118 --no-cache-dir
+
+COPY . .
 
 EXPOSE 3333
 
