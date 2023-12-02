@@ -15,13 +15,13 @@ from ....models.ml.experiment_tracker_enum import ExperimentTrackerEnum
 
 
 class MLFlowLogger(ExperimentLogger):
-    def __init__(self, project: str):
-        super().__init__(project)
+    def __init__(self, project: str, run_name: str):
+        super().__init__(project=project, run_name=run_name)
         self.run = None
     
     def __enter__(self):
         mlflow.set_experiment(experiment_name=self.project)
-        self.run = mlflow.start_run()
+        self.run = mlflow.start_run(run_name=self.run_name)
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tbf):

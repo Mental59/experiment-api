@@ -20,7 +20,7 @@ def run(
     experiment_tracker: ExperimentTrackerEnum,
     **kwargs
 ):
-    with get_experiment_tracker(experiment_tracker, project, **kwargs) as experiment_logger:
+    with get_experiment_tracker(experiment_tracker, project, run_name, **kwargs) as experiment_logger:
         device = experiment_setupper.get_torch_device()
 
         train_run = get_run_loader(experiment_tracker=experiment_tracker, project=project, run_id=train_run_id, **kwargs)

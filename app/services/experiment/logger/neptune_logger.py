@@ -12,8 +12,8 @@ from ....models.ml.experiment_tracker_enum import ExperimentTrackerEnum
 
 
 class NeptuneLogger(ExperimentLogger):          
-    def __init__(self, project: str, api_token: str) -> None:
-        super().__init__(project)
+    def __init__(self, project: str, run_name: str, api_token: str) -> None:
+        super().__init__(project=project, run_name=run_name)
         self.api_token = api_token
         self.run = None
     
@@ -27,6 +27,7 @@ class NeptuneLogger(ExperimentLogger):
             capture_hardware_metrics=True,
             dependencies='infer'
         )
+        self.run['sys/name'] = self.run_name
         return self
     
     def __exit__(self, exc_type, exc_val, exc_tbf):

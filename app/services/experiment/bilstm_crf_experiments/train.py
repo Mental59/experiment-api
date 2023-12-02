@@ -32,7 +32,7 @@ def run(
     experiment_tracker: ExperimentTrackerEnum,
     **kwargs
 ):
-    with get_experiment_tracker(experiment_tracker, project=project, **kwargs) as experiment_logger:
+    with get_experiment_tracker(experiment_tracker, project=project, run_name=run_name, **kwargs) as experiment_logger:
         model = str(ModelEnum.BiLSTM_CRF)
         device = experiment_setupper.get_torch_device()
 
