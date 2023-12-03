@@ -7,14 +7,14 @@ import mlflow
 from matplotlib.figure import Figure
 from neptune.types import File
 
-from .experiment_logger import ExperimentLogger
+from .experiment_tracker import ExperimentTracker
 from ...dataset_processor.colorizer import colorize_html_table
 from ...file_manager.temp_folder import TempFolder
 from ....models.ml.experiment_run_result import ExperimentRunResult
 from ....models.ml.experiment_tracker_enum import ExperimentTrackerEnum
 
 
-class MLFlowLogger(ExperimentLogger):
+class MLFlowTracker(ExperimentTracker):
     def __init__(self, project: str, run_name: str):
         super().__init__(project=project, run_name=run_name)
         self.run = None

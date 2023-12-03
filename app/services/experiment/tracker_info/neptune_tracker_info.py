@@ -1,11 +1,11 @@
 import neptune
 
-from ....models.experiment.logger_info import LoggerInfo, ExperimentInfo, RunInfo, RunType
+from ....models.experiment.tracker_info import ExperimentTrackerInfo, ExperimentInfo, RunInfo, RunType
 from ....models.ml.experiment_tracker_enum import ExperimentTrackerEnum
 
 
-def get_info(api_token: str, project_name: str) -> LoggerInfo:
-    logger_info = LoggerInfo(tracker=ExperimentTrackerEnum.Neptune, projects=[])
+def get_experiment_tracker_info(api_token: str, project_name: str) -> ExperimentTrackerInfo:
+    logger_info = ExperimentTrackerInfo(tracker=ExperimentTrackerEnum.Neptune, projects=[])
 
     project = neptune.Project(project=project_name, api_token=api_token)
     runs_table = project.fetch_runs_table().to_pandas().sort_values(by="sys/creation_time", ascending=False)

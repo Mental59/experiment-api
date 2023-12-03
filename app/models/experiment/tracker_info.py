@@ -26,7 +26,7 @@ class ExperimentInfo(BaseModel):
     runs: list[RunInfo]
 
 
-class LoggerInfo(BaseModel):
+class ExperimentTrackerInfo(BaseModel):
     tracker: ExperimentTrackerEnum
     projects: list[ExperimentInfo]
 

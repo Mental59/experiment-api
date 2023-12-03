@@ -1,12 +1,12 @@
 import mlflow
 from mlflow.entities import ViewType
 
-from ....models.experiment.logger_info import LoggerInfo, ExperimentInfo, RunInfo, RunType
+from ....models.experiment.tracker_info import ExperimentTrackerInfo, ExperimentInfo, RunInfo, RunType
 from ....models.ml.experiment_tracker_enum import ExperimentTrackerEnum
 
 
-def get_info() -> LoggerInfo:
-    logger_info = LoggerInfo(tracker=ExperimentTrackerEnum.MLflow, projects=[])
+def get_experiment_tracker_info() -> ExperimentTrackerInfo:
+    logger_info = ExperimentTrackerInfo(tracker=ExperimentTrackerEnum.MLflow, projects=[])
 
     client = mlflow.tracking.MlflowClient()
     experiements = client.search_experiments(view_type=ViewType.ACTIVE_ONLY)

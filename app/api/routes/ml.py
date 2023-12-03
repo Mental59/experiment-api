@@ -27,7 +27,7 @@ def train(body: MLTrainExperimentInput, project: str, api_token: str) -> Experim
         case_sensitive=body.train_params.case_sensitive,
         test_size=body.train_params.test_size,
         num2words=body.train_params.num2words,
-        experiment_tracker=ExperimentTrackerEnum.Neptune
+        experiment_tracker_type=ExperimentTrackerEnum.Neptune
     )
 
 
@@ -39,7 +39,7 @@ def test(body: MLTestExperimentInput, project: str, api_token: str) -> Experimen
         dataset=body.dataset,
         train_run_id=body.train_run_id,
         api_token=api_token,
-        experiment_tracker=ExperimentTrackerEnum.Neptune
+        experiment_tracker_type=ExperimentTrackerEnum.Neptune
     )
 
 
@@ -60,7 +60,7 @@ def train(body: MLTrainExperimentInput, project: str) -> ExperimentRunResult:
         case_sensitive=body.train_params.case_sensitive,
         test_size=body.train_params.test_size,
         num2words=body.train_params.num2words,
-        experiment_tracker=ExperimentTrackerEnum.MLflow
+        experiment_tracker_type=ExperimentTrackerEnum.MLflow
     )
 
 
@@ -71,5 +71,5 @@ def test(body: MLTestExperimentInput, project: str) -> ExperimentRunResult:
         run_name=body.run_name,
         dataset=body.dataset,
         train_run_id=body.train_run_id,
-        experiment_tracker=ExperimentTrackerEnum.MLflow
+        experiment_tracker_type=ExperimentTrackerEnum.MLflow
     )

@@ -11,7 +11,7 @@ from sklearn import metrics
 from .bilstm_crf import BiLSTM_CRF
 from .custom_dataset import CustomDataset
 from ..data_master import count_unk_foreach_tag, DataAnalyzer
-from ...services.experiment.logger.experiment_logger import ExperimentLogger
+from ...services.experiment.tracker.experiment_tracker import ExperimentTracker
 from ...models.ml.eval_res import MetricsEvaluateRes, EvaluateRes
 from ...constants.nn import UNKNOWN_TAG
 from ...constants.save_keys import *
@@ -23,7 +23,7 @@ def train(
         dataloaders,
         device,
         num_epochs,
-        experiment_logger: Optional[ExperimentLogger] = None,
+        experiment_logger: Optional[ExperimentTracker] = None,
         scheduler=None,
         verbose=True):
     losses = {'train': [], 'val': []}

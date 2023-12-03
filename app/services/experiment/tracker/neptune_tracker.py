@@ -6,12 +6,12 @@ import pandas as pd
 from matplotlib.figure import Figure
 
 from ...dataset_processor.colorizer import colorize_html_table
-from .experiment_logger import ExperimentLogger
+from .experiment_tracker import ExperimentTracker
 from ....models.ml.experiment_run_result import ExperimentRunResult
 from ....models.ml.experiment_tracker_enum import ExperimentTrackerEnum
 
 
-class NeptuneLogger(ExperimentLogger):          
+class NeptuneTracker(ExperimentTracker):          
     def __init__(self, project: str, run_name: str, api_token: str) -> None:
         super().__init__(project=project, run_name=run_name)
         self.api_token = api_token

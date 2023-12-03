@@ -6,7 +6,7 @@ from matplotlib.figure import Figure
 from ....models.ml.experiment_run_result import ExperimentRunResult
 
 
-class ExperimentLogger(metaclass=ABCMeta):
+class ExperimentTracker(metaclass=ABCMeta):
     def __init__(self, project: str, run_name: str):
         self.project = project
         self.run_name = run_name
