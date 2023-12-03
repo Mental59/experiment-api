@@ -12,5 +12,5 @@ def get_mlflow_info() -> ExperimentTrackerInfo:
 
 
 @router.get('/neptune-tracker-info')
-def get_neptune_info(project: str, api_token: str) -> ExperimentTrackerInfo:
-    return neptune_tracker_info.get_experiment_tracker_info(api_token=api_token, project_name=project)
+def get_neptune_info(api_token: str) -> ExperimentTrackerInfo:
+    return neptune_tracker_info.get_experiment_tracker_info(api_token=api_token)
