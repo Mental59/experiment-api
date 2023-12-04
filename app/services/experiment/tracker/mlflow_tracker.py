@@ -44,8 +44,9 @@ class MLFlowTracker(ExperimentTracker):
     def get_run_result(self) -> ExperimentRunResult:
         return ExperimentRunResult(
             experiment_tracker=ExperimentTrackerEnum.MLflow,
-            experiment_id=self.run.info.experiment_id,
-            run_id=self.run.info.run_id
+            project_id=self.run.info.experiment_id,
+            run_id=self.run.info.run_id,
+            run_name=self.run_name
         )
     
     def log_colorized_table(

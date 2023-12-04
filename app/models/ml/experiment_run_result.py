@@ -8,7 +8,8 @@ from .experiment_tracker_enum import ExperimentTrackerEnum
 class ExperimentRunResult(BaseModel):
     experiment_tracker: ExperimentTrackerEnum
     run_id: str
-    experiment_id: Optional[str] = None
+    run_name: str
+    project_id: str = None
     url: Optional[str] = None
 
     class Config:

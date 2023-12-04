@@ -13,5 +13,6 @@ async def get_datasets() -> list[str]:
 
 
 @router.post("/upload")
-async def upload_datasets(datasets: Annotated[list[UploadFile], File(description="Multiple datasets")]) -> None:
+async def upload_datasets(datasets: Annotated[list[UploadFile], File(description="Multiple datasets")]) -> list[str]:
     await loader.upload_datasets(datasets)
+    return loader.get_datasets()

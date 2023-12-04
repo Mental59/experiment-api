@@ -49,6 +49,8 @@ class NeptuneTracker(ExperimentTracker):
         return ExperimentRunResult(
             experiment_tracker=ExperimentTrackerEnum.Neptune,
             url=self.run.get_url(),
+            project_id=self.project,
+            run_name=self.run_name,
             run_id=self.run['sys/id'].fetch(),
         )
     
