@@ -13,11 +13,14 @@ def get_experiment_tracker_info(api_token: str) -> ExperimentTrackerInfo:
     for project_name in project_names:
         project = neptune.Project(project=project_name, api_token=api_token)
 
-        runs_table = project.fetch_runs_table().to_pandas().sort_values(by="sys/creation_time", ascending=False)
+        try:
+            runs_table = project.fetch_runs_table().to_pandas().sort_values(by="sys/creation_time", ascending=False)
 
-        run_info = [RunInfo(run_id=run['sys/id'], run_name=run['sys/name'], run_type=get_run_type_from_tags(run['sys/tags'].split(','))) for _, run in runs_table.iterrows()]
+            run_info = [RunInfo(run_id=run['sys/id'], run_name=run['sys/name'], run_type=get_run_type_from_tags(run['sys/tags'].split(','))) for _, run in runs_table.iterrows()]
 
-        logger_info.projects.append(ExperimentInfo(project_id=project_name, project_name=project_name, runs=run_info))
+            logger_info.projects.append(ExperimentInfo(project_id=project_name, project_name=project_name, runs=run_info))
+        finally:
+            project.stop()
 
     return logger_info
 

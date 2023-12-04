@@ -24,10 +24,13 @@ def run(
         device = experiment_setupper.get_torch_device()
 
         train_run = get_run_loader(experiment_tracker_type=experiment_tracker_type, project=project, run_id=train_run_id, **kwargs)
-        train_run_params = train_run.get_params(PARAMETERS_SAVE_KEY)
-        word_to_ix = train_run.get_word_to_ix(WORD_TO_IX_SAVE_KEY)
-        tag_to_ix = train_run.get_tag_to_ix(TAG_TO_IX_SAVE_KEY)
-        model_state_dict = train_run.get_model_state_dict(BEST_MODEL_SAVE_KEY)
+        try:
+            train_run_params = train_run.get_params(PARAMETERS_SAVE_KEY)
+            word_to_ix = train_run.get_word_to_ix(WORD_TO_IX_SAVE_KEY)
+            tag_to_ix = train_run.get_tag_to_ix(TAG_TO_IX_SAVE_KEY)
+            model_state_dict = train_run.get_model_state_dict(BEST_MODEL_SAVE_KEY)
+        finally:
+            train_run.stop()
 
         sents = dataset_generator.get_sents_from_dataset(dataset, case_sensitive=train_run_params['case_sensitive'])
         experiment_tracker.log_dataset(DATASET_SAVE_KEY, dataset_generator.get_dataset_path(dataset))

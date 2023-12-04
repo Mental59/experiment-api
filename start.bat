@@ -1,1 +1,1 @@
-uvicorn app.main:app --port 3333 --host 0.0.0.0
+uvicorn app.main:app --port 5000 --host 0.0.0.0

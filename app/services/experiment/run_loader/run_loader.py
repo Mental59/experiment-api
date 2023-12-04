@@ -21,3 +21,7 @@ class RunLoader(metaclass=ABCMeta):
     @abstractmethod
     def get_tag_to_ix(self, save_key: str) -> dict[str, int]:
         pass
+
+    @abstractmethod
+    def stop(self) -> None:
+        pass

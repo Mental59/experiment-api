@@ -53,6 +53,9 @@ class MLFlowRunLoader(RunLoader):
         content = mlflow.artifacts.load_text(self.run.info.artifact_uri + f'/{save_key}.json')
         return json.loads(content)
 
+    def stop(self) -> None:
+        pass
+
     @staticmethod
     def __is_float(s: str):
         try:

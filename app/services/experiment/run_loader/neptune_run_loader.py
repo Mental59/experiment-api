@@ -29,3 +29,6 @@ class NeptuneRunLoader(RunLoader):
         self.run[save_key].download(destination=PATHS.TEMP_PATH)
         with open(os.path.join(PATHS.TEMP_PATH, save_key.split('/')[-1] + '.json'), encoding='utf-8') as file:
             return json.load(file)
+    
+    def stop(self) -> None:
+        return self.run.stop()
