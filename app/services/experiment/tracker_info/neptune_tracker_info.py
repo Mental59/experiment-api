@@ -1,5 +1,6 @@
 import neptune
 from neptune import management
+from neptune.exceptions import NeptuneException
 
 from ....models.experiment.tracker_info import ExperimentTrackerInfo, ExperimentInfo, RunInfo, RunType
 from ....models.ml.experiment_tracker_enum import ExperimentTrackerEnum
@@ -23,6 +24,14 @@ def get_experiment_tracker_info(api_token: str) -> ExperimentTrackerInfo:
             project.stop()
 
     return logger_info
+
+
+def check_token(api_token: str) -> bool:
+    try:
+        management.get_project_list(api_token=api_token)
+        return True
+    except NeptuneException:
+        return False
 
 
 def get_run_type_from_tags(tags: list[str]) -> RunType:

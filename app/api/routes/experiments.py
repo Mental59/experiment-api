@@ -14,3 +14,8 @@ def get_mlflow_info() -> ExperimentTrackerInfo:
 @router.get('/neptune-tracker-info')
 def get_neptune_info(api_token: str) -> ExperimentTrackerInfo:
     return neptune_tracker_info.get_experiment_tracker_info(api_token=api_token)
+
+
+@router.get('/neptune-check-api-token')
+def check_neptune_token(api_token: str) -> bool:
+    return neptune_tracker_info.check_token(api_token)
