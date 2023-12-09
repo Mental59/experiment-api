@@ -6,6 +6,7 @@ import torch
 
 from .run_loader import RunLoader
 from ....services.file_manager.temp_folder import TempFolder
+from ....services.experiment.setupper import get_torch_device
 
 
 class MLFlowRunLoader(RunLoader):
@@ -41,7 +42,7 @@ class MLFlowRunLoader(RunLoader):
                 artifact_path=f'{save_key}.pth',
                 dst_path=temp_folder.path
             )
-            return torch.load(os.path.join(temp_folder.path, *save_key.split('/')) + '.pth')
+            return torch.load(os.path.join(temp_folder.path, *save_key.split('/')) + '.pth', map_location=get_torch_device())
 
     def get_word_to_ix(self, save_key: str) -> dict[str, int]:
         return self.__load_json(save_key)

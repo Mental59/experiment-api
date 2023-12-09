@@ -5,6 +5,7 @@ import neptune
 import torch
 
 from ....constants.artifacts import PATHS
+from ....services.experiment.setupper import get_torch_device
 from .run_loader import RunLoader
 
 
@@ -18,7 +19,7 @@ class NeptuneRunLoader(RunLoader):
     
     def get_model_state_dict(self, save_key: str):
         self.run[save_key].download(destination=PATHS.TEMP_PATH)
-        return torch.load(os.path.join(PATHS.TEMP_PATH, save_key.split('/')[-1] + '.pth'))
+        return torch.load(os.path.join(PATHS.TEMP_PATH, save_key.split('/')[-1] + '.pth'), map_location=get_torch_device())
 
     def get_word_to_ix(self, save_key: str) -> dict[str, int]:
         self.run[save_key].download(destination=PATHS.TEMP_PATH)
