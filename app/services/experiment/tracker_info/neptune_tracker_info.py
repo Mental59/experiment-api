@@ -35,7 +35,6 @@ def check_token(api_token: str) -> bool:
 
 
 def get_run_type_from_tags(tags: list[str]) -> RunType:
-    print(tags)
     for tag in tags:
         if tag == RunType.Train.value:
             return RunType.Train
