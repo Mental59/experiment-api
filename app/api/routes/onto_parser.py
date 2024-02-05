@@ -21,4 +21,8 @@ async def find_models(source_file: Annotated[UploadFile, File(description="Pytho
         raise HTTPException(400, detail=create_exception_details(f"Invalid source file; reason: {error}"))
     
     return onto.find_func_calls(parse_python_code(text))
-    
+
+
+@router.get('/tree-view')
+def get_tree_view():
+    return onto.get_models_tree_view()
