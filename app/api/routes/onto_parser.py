@@ -25,4 +25,4 @@ async def find_models(source_file: Annotated[UploadFile, File(description="Pytho
 
 @router.get('/tree-view')
 def get_tree_view():
-    return onto.get_models_tree_view()
+    return onto.get_main_branches_tree_view()
