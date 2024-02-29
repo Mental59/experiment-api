@@ -1,7 +1,7 @@
 from torch.utils.data import DataLoader
 
 from ....services.nn.utils import CustomDataset, evaluate_model
-from ....services.nn.bilstm_crf import BiLSTM_CRF
+from ....services.nn.bilstm_crf import LSTM_CRF
 from ....services.dataset_processor import generator as dataset_generator
 from ....services.dataset_processor import analyzer as dataset_analyzer
 from ....services.experiment import setupper as experiment_setupper
@@ -57,7 +57,7 @@ def run(
         dataset = CustomDataset(sents, tag_to_ix, word_to_ix, convert_nums2words=train_run_params['num2words'])
         dataloader = DataLoader(dataset, batch_size=train_run_params['batch_size'], shuffle=False, drop_last=False)
 
-        model = BiLSTM_CRF(vocab_size, num_tags, embedding_dim, hidden_dim, word_to_ix[PAD]).to(device).eval()
+        model = LSTM_CRF(vocab_size, num_tags, embedding_dim, hidden_dim, word_to_ix[PAD]).to(device).eval()
         model.load_state_dict(model_state_dict)
 
         eval_res = evaluate_model(

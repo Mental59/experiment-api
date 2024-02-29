@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 from tqdm import tqdm
 from sklearn import metrics
 
-from .bilstm_crf import BiLSTM_CRF
+from .bilstm_crf import LSTM_CRF
 from .custom_dataset import CustomDataset
 from ..data_master import count_unk_foreach_tag, DataAnalyzer
 from ...services.experiment.tracker.experiment_tracker import ExperimentTracker
@@ -94,7 +94,7 @@ def train(
 
 
 def evaluate_model(
-        model: BiLSTM_CRF,
+        model: LSTM_CRF,
         dataset: CustomDataset,
         dataloader: DataLoader,
         pad_idx: int,

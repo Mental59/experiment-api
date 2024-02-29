@@ -4,7 +4,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 from sklearn.model_selection import train_test_split
 
 from ....services.nn.utils import CustomDataset, train, evaluate_model
-from ....services.nn.bilstm_crf import BiLSTM_CRF
+from ....services.nn.bilstm_crf import LSTM_CRF
 from ....models.ml.model_enum import ModelEnum
 from ....services.dataset_processor import generator as dataset_generator
 from ....services.experiment import setupper as experiment_setupper
@@ -76,7 +76,7 @@ def run(
         vocab_size = len(word_to_ix)
         num_tags = len(tag_to_ix)
         labels = dataset_generator.generate_labels(tag_to_ix)
-        model = BiLSTM_CRF(
+        model = LSTM_CRF(
             vocab_size=vocab_size,
             num_tags=num_tags,
             embedding_dim=embedding_dim,

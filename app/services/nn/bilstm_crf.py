@@ -5,10 +5,10 @@ from torch import nn
 from torchcrf import CRF
 
 
-class BiLSTM_CRF(nn.Module):
+class LSTM_CRF(nn.Module):
     def __init__(self, vocab_size: int, num_tags: int, embedding_dim: int, hidden_dim: int,
-                 padding_idx: int = None, custom_features_size: int = 0):
-        super(BiLSTM_CRF, self).__init__()
+                 padding_idx: int = None, bidirectional=True, custom_features_size: int = 0):
+        super(LSTM_CRF, self).__init__()
         self.embedding_dim = embedding_dim
         self.hidden_dim = hidden_dim
         self.vocab_size = vocab_size
@@ -16,7 +16,7 @@ class BiLSTM_CRF(nn.Module):
 
         self.embedding = nn.Embedding(vocab_size, embedding_dim, padding_idx=padding_idx)
         self.lstm = nn.LSTM(embedding_dim, hidden_dim, num_layers=1,
-                            batch_first=True, bidirectional=True)
+                            batch_first=True, bidirectional=bidirectional)
         self.hidden2tags = nn.Linear(hidden_dim * 2 + custom_features_size, num_tags)
         self.crf = CRF(num_tags, batch_first=True)
 
@@ -78,7 +78,7 @@ def main():
     embedding_dim = 8
     hidden_dim = 6
 
-    model = BiLSTM_CRF(vocab_size, len(tag_to_ix), embedding_dim, hidden_dim)
+    model = LSTM_CRF(vocab_size, len(tag_to_ix), embedding_dim, hidden_dim)
     input = torch.tensor([
         [0, 5, 2, 1, 4],
         [8, 9, 2, 1, 1],
