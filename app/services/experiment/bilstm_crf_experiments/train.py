@@ -33,7 +33,7 @@ def run(
     **kwargs
 ):
     with get_experiment_tracker(experiment_tracker_type, project=project, run_name=run_name, **kwargs) as experiment_tracker:
-        model = str(ModelEnum.BiLSTM_CRF)
+        model = str(ModelEnum.LSTM_CRF)
         device = experiment_setupper.get_torch_device()
 
         params = {
@@ -81,7 +81,7 @@ def run(
             num_tags=num_tags,
             embedding_dim=embedding_dim,
             hidden_dim=hidden_dim,
-            padding_idx=word_to_ix[PAD]
+            padding_idx=word_to_ix[PAD],
         ).to(device)
         optimizer = Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
         scheduler = ReduceLROnPlateau(optimizer, factor=scheduler_factor, patience=scheduler_patience)
