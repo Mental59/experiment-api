@@ -195,12 +195,12 @@ async def find_models(onto: OntoParser, source_files: list[UploadFile]):
                         model_combinations.append(path[1])
                         excluded_model_ids.update([models[i]["id"], models[j]["id"]])
         models.extend(model_combinations)
-        models = [model for model in models if model["id"] not in excluded_model_ids]
-
-        
-        res_models.extend([model for model in models if model["id"] not in ids])
+        models = [model for model in models if model["id"] not in excluded_model_ids and model["id"] not in ids]
         ids.update([model["id"] for model in models])
-    
+
+        libraries = [dict(id=lib["id"], name=lib["name"]) for lib in func_calls]
+        res_models.extend([dict(id=model["id"], name=model["name"], libraries=libraries) for model in models])
+
     return res_models
 
 
