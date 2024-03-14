@@ -39,7 +39,7 @@ def run(
         params = {
             'model_name': model,
             'dataset': dataset,
-            'device': device,
+            'device': str(device),
             'batch_size': batch_size,
             'embedding_dim': embedding_dim,
             'hidden_dim': hidden_dim,
@@ -122,4 +122,4 @@ def run(
         )
         experiment_tracker.log_table(ACTUAL_DF_SAVE_KEY, eval_res.df_actual)
 
-        return experiment_tracker.get_run_result()
+        return experiment_tracker.get_run_result(), eval_res.metrics, params

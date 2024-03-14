@@ -42,7 +42,7 @@ def run(
         params = {
             'train_run_id': train_run_id,
             'dataset': dataset,
-            'device': device,
+            'device': str(device),
             'unknown_labels': unknown_labels
         }
         experiment_tracker.log_params(PARAMETERS_SAVE_KEY, params)
@@ -84,4 +84,4 @@ def run(
         )
         experiment_tracker.log_table(ACTUAL_DF_SAVE_KEY, eval_res.df_actual)
 
-        return experiment_tracker.get_run_result()
+        return experiment_tracker.get_run_result(), eval_res.metrics, {**train_run_params, **params}

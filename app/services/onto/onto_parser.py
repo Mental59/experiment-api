@@ -12,18 +12,16 @@ class OntoParser:
     init_node_name = "init"
 
     def __init__(self, data):
-        self.last_id = data["last_id"]
+        self.raw_data = data
+        self.last_id = int(data["last_id"])
         self.namespaces = data["namespaces"]
-        self.nodes = {node["id"]: node for node in data["nodes"]}
-        self.relations = data["relations"]
-        self.hashed_relations = {f"{relation['source_node_id']}-{relation['destination_node_id']}": relation for relation in data["relations"]}
-        self.digraph = self.create_digraph()
-        self.leaves = [node for node in data["nodes"] if node["attributes"].get("leaf", False)]
-        self.main_branches = self.get_nodes_linked_from(self.get_node_by_name(self.init_node_name))
 
-        self.model_nodes = []
-        for model_node in self.get_nodes_linked_to(self.get_node_by_name("Machine Learning Method"), ["is_a"]):
-            self.model_nodes.extend(self.get_nodes_linked_to(model_node, ["use"]))
+        self.nodes = {node["id"]: node for node in data["nodes"]}
+
+        self.relations: list = data["relations"]
+        self.hashed_relations = {f"{relation['source_node_id']}-{relation['destination_node_id']}": relation for relation in data["relations"]}
+
+        self.digraph = self.create_digraph()
 
     def create_digraph(self):
         graph = nx.DiGraph()
@@ -70,7 +68,7 @@ class OntoParser:
                 return node
     
     def get_nodes_linked_to(self, node, link_names = None):
-        """ get all nodes connected to node with node_id by link with link_name"""
+        """ get all nodes connected to node with node_id by links with link_names"""
         node_id = node["id"]
 
         nodes = [
@@ -82,7 +80,7 @@ class OntoParser:
         return nodes
     
     def get_nodes_linked_from(self, node, link_names = None):
-        """get all nodes connected from node with node_id by link with link_name"""
+        """get all nodes connected from node with node_id by links with link_names"""
         node_id = node["id"]
 
         nodes = [
@@ -93,11 +91,50 @@ class OntoParser:
 
         return nodes
     
-    def get_main_branch_nodes(self):
-        return self.main_branches
+    def add_node(self, name: str, attributes: dict | None = None):
+        if attributes is None:
+            attributes = dict()
 
+        node = dict(attributes=attributes, id=str(self.last_id), name=name, namespace=self.namespaces["default"], position_x=0.0, position_y=0.0)
+        self.digraph.add_node(node["id"])
+        self.last_id += 1
+
+        self.nodes[node["id"]] = node
+
+        return node
+    
+    def add_relation(self, name: str, source_node_id: str, destination_node_id: str, attributes: dict | None = None):
+        if attributes is None:
+            attributes = dict()
+        
+        relation = dict(attributes=attributes, destination_node_id=destination_node_id, id=str(self.last_id), name=name, namespace=self.namespaces["default"], source_node_id=source_node_id)
+        self.digraph.add_edge(source_node_id, destination_node_id)
+        self.last_id += 1
+
+        self.relations.append(relation)
+        self.hashed_relations[f"{relation['source_node_id']}-{relation['destination_node_id']}"] = relation
+
+        return relation
+
+    def add_experiment(self, name: str, attributes: dict | None = None):
+        experiment_node = self.get_node_by_name("Experiment")
+        node = self.add_node(name, attributes)
+        self.add_relation("a_part_of", experiment_node["id"], node["id"])
+
+    def save(self, path: str):
+        self.raw_data["last_id"] = str(self.last_id)
+        self.raw_data["nodes"] = list(self.nodes.values())
+        self.raw_data["relations"] = self.relations
+
+        with open(path, "w", encoding="utf-8") as file:
+            json.dump(self.raw_data, file, indent=4)
+
+    def get_main_branch_nodes(self):
+        return self.get_nodes_linked_from(self.get_node_by_name(self.init_node_name))
+    
     def get_leaf_nodes_for_branch(self, branch_name: str):
-        return [leaf for leaf in self.leaves if leaf["attributes"]["branch"] == branch_name]
+        leaves = [node for node in self.nodes.values() if node["attributes"].get("leaf", False) and node["attributes"].get("branch") == branch_name]
+        return leaves
     
     def get_main_branches_tree_view(self):
         main_branche_nodes = self.get_main_branch_nodes()
@@ -135,8 +172,12 @@ class OntoParser:
         return list(tree.values())
     
     def find_func_calls(self, func_calls: list[FuncCall]):
+        model_nodes = []
+        for model_node in self.get_nodes_linked_to(self.get_node_by_name("Machine Learning Method"), ["is_a"]):
+            model_nodes.extend(self.get_nodes_linked_to(model_node, ["use"]))
+        
         func_call_full_names = set([func_call.get_full_name() for func_call in func_calls])
-        return [model_node for model_node in self.model_nodes if model_node["name"] in func_call_full_names]
+        return [model_node for model_node in model_nodes if model_node["name"] in func_call_full_names]
     
     @staticmethod
     def __tree_dicts_to_tree_lists(tree: dict):
