@@ -4,9 +4,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from .core.events import create_start_app_handler, create_stop_app_handler
 from .core.handlers import handle_exception
 from .api.routes import api
+from .db import database
 
 
 def get_application() -> FastAPI:
+    database.Base.metadata.create_all(bind=database.engine)
+    
     app = FastAPI()
 
     app.add_event_handler('startup', create_start_app_handler())
