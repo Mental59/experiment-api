@@ -16,7 +16,7 @@ router = APIRouter()
 def signup(user: schemas.UserSignup, db: Session = Depends(get_db)):
     db_user = queries.get_user_by_login(db, user.login)
     if db_user:
-        raise HTTPException(status_code=400, detail=create_exception_details("User with such login exists"))
+        raise HTTPException(status_code=400, detail=create_exception_details(message="User with such login exists"))
     return queries.create_user(db, user)
 
 
@@ -26,7 +26,7 @@ def signin(signin_data: schemas.UserSignin, db: Session = Depends(get_db)) -> To
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
+            detail=create_exception_details(message="Incorrect login or password"),
             headers={"WWW-Authenticate": "Bearer"},
         )
     access_token = create_access_token(user)
