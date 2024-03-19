@@ -13,7 +13,7 @@ router = APIRouter()
 
 
 @router.post('/signup', response_model=schemas.User)
-def create_user(user: schemas.UserSignup, db: Session = Depends(get_db)):
+def signup(user: schemas.UserSignup, db: Session = Depends(get_db)):
     db_user = queries.get_user_by_login(db, user.login)
     if db_user:
         raise HTTPException(status_code=400, detail=create_exception_details("User with such login exists"))

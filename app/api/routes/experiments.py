@@ -1,9 +1,11 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+
+from app.services.auth.auth import get_current_active_user
 
 from ...services.experiment.tracker_info import mlflow_tracker_info, neptune_tracker_info
 from ...models.experiment.tracker_info import ExperimentTrackerInfo
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_active_user)])
 
 
 @router.get('/mlflow-tracker-info')

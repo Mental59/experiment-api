@@ -1,10 +1,12 @@
 from typing import Annotated
 
-from fastapi import APIRouter, UploadFile, File
+from fastapi import APIRouter, Depends, UploadFile, File
+
+from app.services.auth.auth import get_current_active_user
 
 from ...services.dataset_processor import loader
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_active_user)])
 
 
 @router.get("/")
