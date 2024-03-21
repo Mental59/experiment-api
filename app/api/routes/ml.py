@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Annotated
 
 from fastapi import APIRouter, Depends
 
@@ -16,8 +17,7 @@ from ...services.onto.onto import ONTO_PARSER, ONTO_PATH
 router = APIRouter(dependencies=[Depends(get_current_active_user)])
 
 
-async def add_experiment(run_result: ExperimentRunResult, params: dict, metrics: MetricsEvaluateRes, mode: str):
-    user: models.UserDB = await get_current_active_user()
+def add_experiment(run_result: ExperimentRunResult, params: dict, metrics: MetricsEvaluateRes, mode: str, user: models.UserDB):
     now = datetime.now().strftime("%H:%M:%S %d-%m-%Y")
     tracker_info = run_result.model_dump()
     metrics_dict = metrics.model_dump()
@@ -29,7 +29,7 @@ async def add_experiment(run_result: ExperimentRunResult, params: dict, metrics:
             time=now,
             tracker_info=tracker_info,
             metrics=metrics_dict,
-            author=dict(name=user.id),
+            author=dict(id=str(user.id), login=str(user.login)),
             parameters=params
         )
     )
@@ -37,7 +37,7 @@ async def add_experiment(run_result: ExperimentRunResult, params: dict, metrics:
 
 
 @router.post('/train-neptune')
-async def train(body: MLTrainExperimentInput, project: str, api_token: str) -> ExperimentRunResult:
+def train(body: MLTrainExperimentInput, project: str, api_token: str, current_user: Annotated[models.UserDB, Depends(get_current_active_user)]) -> ExperimentRunResult:
     run_result, metrics, params = train_runner.run(
         project=project,
         run_name=body.run_name,
@@ -56,12 +56,12 @@ async def train(body: MLTrainExperimentInput, project: str, api_token: str) -> E
         num2words=body.train_params.num2words,
         experiment_tracker_type=ExperimentTrackerEnum.Neptune
     )
-    await add_experiment(run_result, params, metrics, mode='train')
+    add_experiment(run_result, params, metrics, mode='train', user=current_user)
     return run_result
 
 
 @router.post('/test-neptune')
-async def test(body: MLTestExperimentInput, project: str, api_token: str) -> ExperimentRunResult:
+def test(body: MLTestExperimentInput, project: str, api_token: str, current_user: Annotated[models.UserDB, Depends(get_current_active_user)]) -> ExperimentRunResult:
     run_result, metrics, params = test_runner.run(
         project=project,
         run_name=body.run_name,
@@ -70,12 +70,12 @@ async def test(body: MLTestExperimentInput, project: str, api_token: str) -> Exp
         api_token=api_token,
         experiment_tracker_type=ExperimentTrackerEnum.Neptune
     )
-    await add_experiment(run_result, params, metrics, mode='test')
+    add_experiment(run_result, params, metrics, mode='test', user=current_user)
     return run_result
 
 
 @router.post('/train-mlflow')
-async def train(body: MLTrainExperimentInput, project: str) -> ExperimentRunResult:
+def train(body: MLTrainExperimentInput, project: str, current_user: Annotated[models.UserDB, Depends(get_current_active_user)]) -> ExperimentRunResult:
     run_result, metrics, params = train_runner.run(
         project=project,
         run_name=body.run_name,
@@ -93,12 +93,12 @@ async def train(body: MLTrainExperimentInput, project: str) -> ExperimentRunResu
         num2words=body.train_params.num2words,
         experiment_tracker_type=ExperimentTrackerEnum.MLflow
     )
-    await add_experiment(run_result, params, metrics, mode='train')
+    add_experiment(run_result, params, metrics, mode='train', user=current_user)
     return run_result
 
 
 @router.post('/test-mlflow')
-async def test(body: MLTestExperimentInput, project: str) -> ExperimentRunResult:
+def test(body: MLTestExperimentInput, project: str, current_user: Annotated[models.UserDB, Depends(get_current_active_user)]) -> ExperimentRunResult:
     run_result, metrics, params = test_runner.run(
         project=project,
         run_name=body.run_name,
@@ -106,5 +106,5 @@ async def test(body: MLTestExperimentInput, project: str) -> ExperimentRunResult
         train_run_id=body.train_run_id,
         experiment_tracker_type=ExperimentTrackerEnum.MLflow
     )
-    await add_experiment(run_result, params, metrics, mode='test')
+    add_experiment(run_result, params, metrics, mode='test', user=current_user)
     return run_result
