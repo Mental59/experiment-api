@@ -24,11 +24,16 @@ class OntoParser:
         self.digraph = self.create_digraph()
 
     def create_digraph(self):
+        init_node = self.get_node_by_name("init")
+
         graph = nx.DiGraph()
-        for node_id in self.nodes:
+
+        for node_id in filter(lambda node_id: node_id != init_node["id"], self.nodes):
             graph.add_node(node_id)
-        for link in self.relations:
-            graph.add_edge(link["source_node_id"], link["destination_node_id"])
+
+        for relation in filter(lambda relation: relation["source_node_id"] != init_node["id"] and relation["destination_node_id"] != init_node["id"], self.relations):
+            graph.add_edge(relation["source_node_id"], relation["destination_node_id"])
+            
         return graph
     
     def get_link_between(self, _from, _to):
@@ -118,7 +123,7 @@ class OntoParser:
 
     def add_experiment(self, name: str, attributes: dict | None = None):
         experiment_node = self.get_node_by_name("Experiment")
-        node = self.add_node(name, attributes)
+        node = self.add_node(name, {**attributes, **dict(branch="Experiment", leaf=True)})
         self.add_relation("is_a", node["id"], experiment_node["id"])
 
     def save(self, path: str):
