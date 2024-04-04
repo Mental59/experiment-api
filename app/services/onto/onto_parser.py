@@ -119,7 +119,7 @@ class OntoParser:
     def add_experiment(self, name: str, attributes: dict | None = None):
         experiment_node = self.get_node_by_name("Experiment")
         node = self.add_node(name, attributes)
-        self.add_relation("a_part_of", experiment_node["id"], node["id"])
+        self.add_relation("is_a", node["id"], experiment_node["id"])
 
     def save(self, path: str):
         self.raw_data["last_id"] = str(self.last_id)
