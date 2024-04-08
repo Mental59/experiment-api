@@ -1,3 +1,5 @@
+import traceback
+
 from fastapi import Request
 from mlflow.exceptions import MlflowException
 from neptune.exceptions import NeptuneException
@@ -13,4 +15,4 @@ async def handle_exception(request: Request, call_next):
     except NeptuneException as neptune_exception:
         return JSONResponse(status_code=400, content=create_exception_details(f"Neptune Exception: {neptune_exception}"))
     except Exception as exc:
-        return JSONResponse(status_code=500, content=create_exception_details(f"Unhandled Exception: {exc}"))
+        return JSONResponse(status_code=500, content=create_exception_details(f"Unhandled Exception: {exc}\n{traceback.format_exc()}"))

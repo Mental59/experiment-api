@@ -3,8 +3,8 @@ import json
 import networkx as nx
 from fastapi import UploadFile, HTTPException
 
-from ...models.parser.python_parser import FuncCall
-from ...services.parser.python_parser import parse as parse_python_code
+from ...models.custom_parser.python_parser import FuncCall
+from ...services.custom_parser.python_parser import parse as parse_python_code
 from ...core.exceptions import create_exception_details
 
 
@@ -180,9 +180,27 @@ class OntoParser:
         model_nodes = []
         for model_node in self.get_nodes_linked_to(self.get_node_by_name("Machine Learning Method"), ["is_a"]):
             model_nodes.extend(self.get_nodes_linked_to(model_node, ["use"]))
-        
-        func_call_full_names = set([func_call.get_full_name() for func_call in func_calls])
-        return [model_node for model_node in model_nodes if model_node["name"] in func_call_full_names]
+
+        res = []
+        for model_node in model_nodes:
+            func_calls_for_model = [fc for fc in func_calls if fc.get_full_name() == model_node["name"]]
+
+            if len(func_calls_for_model) == 0:
+                continue
+            
+            parameter_nodes = self.get_nodes_linked_from(model_node, ["takes_parameter"])
+            if len(parameter_nodes) > 0:
+                parameter_node = parameter_nodes[0]
+                attrs = parameter_node["attributes"]
+                for func_call in func_calls_for_model:
+                    func_call_arg = func_call.get_arg_by_keyword_or_index(index=attrs["index"], keyword=attrs["keyword"])
+                    if func_call_arg.value is not None and attrs["value"] in str(func_call_arg.value):
+                        res.append(model_node)
+                        break
+            else:
+                res.append(model_node)
+
+        return res
     
     @staticmethod
     def __tree_dicts_to_tree_lists(tree: dict):
@@ -219,7 +237,6 @@ async def find_models(onto: OntoParser, source_files: list[UploadFile]):
         func_calls = onto.find_func_calls(parse_python_code(text))
         models = [onto.get_nodes_linked_from(func_call, ["use"])[0] for func_call in func_calls]
 
-
         # find model combinations
         model_combinations = []
         excluded_model_ids = set() # exclude models that are used as a combination of models (for example, lstm and crf are used as one model lstm-crf)
@@ -240,6 +257,7 @@ async def find_models(onto: OntoParser, source_files: list[UploadFile]):
                     if link_1["name"] == "combination" and link_2["name"] == "with":
                         model_combinations.append(path[1])
                         excluded_model_ids.update([models[i]["id"], models[j]["id"]])
+
         models.extend(model_combinations)
         models = [model for model in models if model["id"] not in excluded_model_ids and model["id"] not in ids]
         ids.update([model["id"] for model in models])

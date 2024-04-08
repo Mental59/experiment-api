@@ -1,3 +1,6 @@
+import ast
+
+
 class Import:
     def __init__(self, name, asname, module = None):
         self.imported_from = module
@@ -16,10 +19,22 @@ class Import:
         return f"{self.__class__.__name__}(imported_from={self.imported_from}, imported_name={self.imported_name}, imported_asname={self.imported_asname})"
 
 
+class FuncArg:
+    def __init__(self, arg: ast.expr, index: int, keyword: str | None = None, value = None):
+        self.arg = arg
+        self.index = index
+        self.keyword = keyword
+        self.value = value  
+    
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(arg={self.arg}, value={self.value}, index={self.index}, keyword={self.keyword})"
+
+
 class FuncCall:
-    def __init__(self, name, module_name=None):
+    def __init__(self, name: str, args: list[FuncArg], module_name: str | None=None):
         self.func_name = name
         self.module_name = module_name
+        self.args = args
         self.import_module = None
     
     def set_import_module(self, import_module):
@@ -32,6 +47,15 @@ class FuncCall:
             return self.import_module.get_full_name()
         
         return f"{self.import_module.get_full_name()}.{self.func_name}"
-
+    
+    def get_arg_by_keyword_or_index(self, index: int, keyword: str | None = None) -> FuncArg | None:
+        if keyword is not None:
+            for arg in self.args:
+                if arg.keyword == keyword:
+                    return arg
+        
+        if index < len(self.args):
+            return self.args[index]
+ 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(func_name={self.func_name}, module_name={self.module_name}, import_module={self.import_module})"
+        return f"{self.__class__.__name__}(func_name={self.func_name}, module_name={self.module_name}, import_module={self.import_module}, args={self.args})"
