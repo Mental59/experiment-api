@@ -54,7 +54,8 @@ def train(body: MLTrainExperimentInput, project: str, api_token: str, current_us
         case_sensitive=body.train_params.case_sensitive,
         test_size=body.train_params.test_size,
         num2words=body.train_params.num2words,
-        experiment_tracker_type=ExperimentTrackerEnum.Neptune
+        experiment_tracker_type=ExperimentTrackerEnum.Neptune,
+        model_type=body.model
     )
     add_experiment(run_result, params, metrics, mode='train', user=current_user)
     return run_result
@@ -91,7 +92,8 @@ def train(body: MLTrainExperimentInput, project: str, current_user: Annotated[mo
         case_sensitive=body.train_params.case_sensitive,
         test_size=body.train_params.test_size,
         num2words=body.train_params.num2words,
-        experiment_tracker_type=ExperimentTrackerEnum.MLflow
+        experiment_tracker_type=ExperimentTrackerEnum.MLflow,
+        model_type=body.model
     )
     add_experiment(run_result, params, metrics, mode='train', user=current_user)
     return run_result

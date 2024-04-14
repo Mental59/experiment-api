@@ -10,6 +10,7 @@ from ...services.onto.onto import ONTO_PARSER
 
 router = APIRouter(dependencies=[Depends(get_current_active_user)])
 
+
 @router.post('/find-models')
 async def find_models(source_files: Annotated[list[UploadFile], File(description="Python source code")]):
     models = await onto_parser_service.find_models(ONTO_PARSER, source_files)
