@@ -8,6 +8,7 @@ from ...core.exceptions import create_exception_details
 class MLBaseInput(BaseModel):
     dataset: str = 'dataset_name'
     run_name: str = 'test_api_run'
+    base_experiment_id: str | None = None
 
     @field_validator('dataset')
     @classmethod

@@ -121,10 +121,17 @@ class OntoParser:
 
         return relation
 
-    def add_experiment(self, name: str, attributes: dict | None = None):
+    def add_experiment(self, name: str, attributes: dict | None = None, base_experiment_id: str | None = None):
         experiment_node = self.get_node_by_name("Experiment")
+
+        experiments = self.get_nodes_linked_to(experiment_node, ["is_a"])
+        base_experiment = next((exp for exp in experiments if exp["attributes"]["tracker_info"]["run_id"] == base_experiment_id), None)
+
         node = self.add_node(name, {**attributes, **dict(branch="Experiment", leaf=True)})
         self.add_relation("is_a", node["id"], experiment_node["id"])
+
+        if base_experiment is not None:
+            self.add_relation("based_on", node["id"], base_experiment["id"])
 
     def save(self, path: str):
         self.raw_data["last_id"] = str(self.last_id)

@@ -17,7 +17,14 @@ from ...services.onto.onto import ONTO_PARSER, ONTO_PATH
 router = APIRouter(dependencies=[Depends(get_current_active_user)])
 
 
-def add_experiment(run_result: ExperimentRunResult, params: dict, metrics: MetricsEvaluateRes, mode: str, user: models.UserDB):
+def add_experiment(
+        run_result: ExperimentRunResult,
+        params: dict,
+        metrics: MetricsEvaluateRes,
+        mode: str,
+        user: models.UserDB,
+        base_experiment_id: str | None
+    ):
     now = datetime.now().strftime("%H:%M:%S %d-%m-%Y")
     tracker_info = run_result.model_dump()
     metrics_dict = metrics.model_dump()
@@ -31,7 +38,8 @@ def add_experiment(run_result: ExperimentRunResult, params: dict, metrics: Metri
             metrics=metrics_dict,
             author=dict(id=str(user.id), login=str(user.login)),
             parameters=params
-        )
+        ),
+        base_experiment_id=base_experiment_id
     )
     ONTO_PARSER.save(ONTO_PATH)
 
@@ -57,7 +65,7 @@ def train(body: MLTrainExperimentInput, project: str, api_token: str, current_us
         experiment_tracker_type=ExperimentTrackerEnum.Neptune,
         model_type=body.model
     )
-    add_experiment(run_result, params, metrics, mode='train', user=current_user)
+    add_experiment(run_result, params, metrics, mode='train', user=current_user, base_experiment_id=body.base_experiment_id)
     return run_result
 
 
@@ -71,7 +79,7 @@ def test(body: MLTestExperimentInput, project: str, api_token: str, current_user
         api_token=api_token,
         experiment_tracker_type=ExperimentTrackerEnum.Neptune
     )
-    add_experiment(run_result, params, metrics, mode='test', user=current_user)
+    add_experiment(run_result, params, metrics, mode='test', user=current_user, base_experiment_id=body.base_experiment_id)
     return run_result
 
 
@@ -95,7 +103,7 @@ def train(body: MLTrainExperimentInput, project: str, current_user: Annotated[mo
         experiment_tracker_type=ExperimentTrackerEnum.MLflow,
         model_type=body.model
     )
-    add_experiment(run_result, params, metrics, mode='train', user=current_user)
+    add_experiment(run_result, params, metrics, mode='train', user=current_user, base_experiment_id=body.base_experiment_id)
     return run_result
 
 
@@ -108,5 +116,5 @@ def test(body: MLTestExperimentInput, project: str, current_user: Annotated[mode
         train_run_id=body.train_run_id,
         experiment_tracker_type=ExperimentTrackerEnum.MLflow
     )
-    add_experiment(run_result, params, metrics, mode='test', user=current_user)
+    add_experiment(run_result, params, metrics, mode='test', user=current_user, base_experiment_id=body.base_experiment_id)
     return run_result
