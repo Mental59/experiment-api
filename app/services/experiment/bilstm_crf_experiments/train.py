@@ -32,12 +32,11 @@ def run(
     case_sensitive: bool,
     test_size: float,
     num2words: bool,
-    experiment_tracker_type: ExperimentTrackerEnum,
-    model_type: ModelEnum,
+    experiment_tracker_type: str,
     **kwargs
 ):
     with get_experiment_tracker(experiment_tracker_type, project=project, run_name=run_name, **kwargs) as experiment_tracker:
-        model = str(model_type)
+        model = str(ModelEnum.LSTM_CRF)
         device = experiment_setupper.get_torch_device()
 
         params = {
