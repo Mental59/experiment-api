@@ -3,6 +3,8 @@ from torch.utils.data import DataLoader
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from sklearn.model_selection import train_test_split
 
+from app.core.decorators import single_experiment_run
+
 from ....services.nn.utils import CustomDataset, train, evaluate_model
 from ....services.nn.bilstm_crf import LSTM_CRF
 from ....models.ml.model_enum import ModelEnum
@@ -14,6 +16,7 @@ from ....models.ml.experiment_tracker_enum import ExperimentTrackerEnum
 from ....constants.save_keys import *
 
 
+@single_experiment_run
 def run(
     project: str,
     run_name: str,

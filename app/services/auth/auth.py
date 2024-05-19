@@ -49,7 +49,7 @@ def create_access_token(user: models.UserDB):
 async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail=create_exception_details(message="Could not validate credentials"),
+        detail=create_exception_details(message="Некорректные учетные данные"),
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:

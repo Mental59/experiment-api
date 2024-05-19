@@ -1,5 +1,7 @@
 from torch.utils.data import DataLoader
 
+from app.core.decorators import single_experiment_run
+
 from ....services.nn.utils import CustomDataset, evaluate_model
 from ....services.nn.bilstm_crf import LSTM_CRF
 from ....services.dataset_processor import generator as dataset_generator
@@ -11,7 +13,7 @@ from ....constants.nn import PAD, UNK
 from ....models.ml.experiment_tracker_enum import ExperimentTrackerEnum
 from ....constants.save_keys import *
 
-
+@single_experiment_run
 def run(
     project: str,
     run_name: str,
