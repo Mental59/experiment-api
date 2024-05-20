@@ -24,6 +24,21 @@ def run_by_model_name_or_path(
         sents = dataset_generator.get_sents_from_dataset(dataset, case_sensitive=True)
         experiment_tracker.log_dataset(DATASET_SAVE_KEY, dataset_generator.get_dataset_path(dataset))
 
+        params = {
+            'model_name': model_name_or_path,
+            'dataset': dataset,
+            'transformer_experiment': True
+        }
+        experiment_tracker.log_params(PARAMETERS_SAVE_KEY, params)
+        experiment_tracker.add_tags(
+            dict(
+                model_name=model_name_or_path,
+                mode='test',
+                run_name=run_name,
+                transformer_experiment=True
+            )
+        )
+
         tokenizer = transformers.AutoTokenizer.from_pretrained(model_name_or_path)
         model = transformers.AutoModelForTokenClassification.from_pretrained(model_name_or_path)
         pipeline = transformers.pipeline(task=task, model=model, tokenizer=tokenizer)
