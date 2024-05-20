@@ -19,7 +19,7 @@ def run_by_model_name_or_path(
     **kwargs
 ):
     with get_experiment_tracker(experiment_tracker_type, project, run_name, **kwargs) as experiment_tracker:
-        sents = dataset_generator.get_sents_from_dataset(dataset)
+        sents = dataset_generator.get_sents_from_dataset(dataset, case_sensitive=True)
         experiment_tracker.log_dataset(DATASET_SAVE_KEY, dataset_generator.get_dataset_path(dataset))
 
         tokenizer = transformers.AutoTokenizer.from_pretrained(model_name_or_path)
