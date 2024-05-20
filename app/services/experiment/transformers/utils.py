@@ -92,10 +92,22 @@ def evaluate_transformer_pipeline(pipeline, sents, batch_size: int | None = None
     whole_strings = [' '.join(sentence) for sentence, _ in sents]
 
     outputs: NerPipelineOutput = pipeline(whole_strings, batch_size=batch_size, num_workers=num_workers)
-    labels = set()
+
+    sents_labels = set()
     for _, tags in sents:
-        labels.update(tags)
-    labels = sorted(labels)
+        sents_labels.update(tags)
+
+    output_labels = set()
+    for output in outputs:
+        output_labels.update([val['entity'] for val in output])
+
+    all_labels = set()
+    all_labels.update(sents_labels)
+    all_labels.update(output_labels)
+
+    sents_labels = sorted(sents_labels)
+    output_labels = sorted(output_labels)
+    all_labels = sorted(all_labels)
 
     # transformers tokenize words differently (for example word "oakridge" would be splitted into 2 tokens: "oak" and "ridge")
     # so we need to extend y_val_true tags
@@ -106,6 +118,8 @@ def evaluate_transformer_pipeline(pipeline, sents, batch_size: int | None = None
     unk_foreach_tag = dict()
     conf = 0.0
     for output in outputs:
+        if len(output) == 0:
+            continue
         conf += sum([val['score'] for val in output]) / len(output)
     conf /= len(outputs)
 
@@ -113,20 +127,20 @@ def evaluate_transformer_pipeline(pipeline, sents, batch_size: int | None = None
     y_val_pred_flat = flatten_list(y_val_pred)
 
     m = MetricsEvaluateRes(
-        f1_weighted=metrics.f1_score(y_val_true_flat, y_val_pred_flat, average='weighted', labels=labels),
-        precision_weighted=metrics.precision_score(y_val_true_flat, y_val_pred_flat, average='weighted', labels=labels),
-        recall_weighted=metrics.recall_score(y_val_true_flat, y_val_pred_flat, average='weighted', labels=labels),
+        f1_weighted=metrics.f1_score(y_val_true_flat, y_val_pred_flat, average='weighted', labels=sents_labels),
+        precision_weighted=metrics.precision_score(y_val_true_flat, y_val_pred_flat, average='weighted', labels=sents_labels),
+        recall_weighted=metrics.recall_score(y_val_true_flat, y_val_pred_flat, average='weighted', labels=sents_labels),
         accuracy=metrics.accuracy_score(y_val_true_flat, y_val_pred_flat),
         confidence=conf
     )
 
-    flat_classification_report = metrics.classification_report(y_val_true_flat, y_val_pred_flat, labels=labels, digits=3)
+    flat_classification_report = metrics.classification_report(y_val_true_flat, y_val_pred_flat, labels=sents_labels, digits=3)
 
     df_predicted, df_actual, fig, matched_indices, false_positive_indices, false_negative_indices = DataAnalyzer.analyze(
         X=[sentence for sentence, _ in sents],
         y_true=y_val_true,
         y_pred=y_val_pred,
-        keys=labels
+        keys=all_labels
     )
 
     for output in outputs:

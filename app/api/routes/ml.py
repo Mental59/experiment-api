@@ -3,7 +3,9 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 
 from app.db import models
+from app.models.ml.transformer_input import TestTransformerByModelName
 from app.services.auth.auth import get_current_active_user
+from app.services.experiment.transformers.test import run_by_model_name_or_path
 from app.services.onto.utils import add_experiment_from_results
 
 from ...models.ml.ml_train_input import MLTrainExperimentInput
@@ -66,6 +68,37 @@ def test(
         train_run_id=body.train_run_id,
         api_token=api_token,
         experiment_tracker_type=body.experiment_tracker
+    )
+
+    add_experiment_from_results(
+        run_result,
+        params,
+        metrics,
+        mode='test',
+        user=current_user,
+        base_experiment_id=body.base_experiment_id
+    )
+
+    return run_result
+
+
+@router.post('/test-transformer-by-model-name')
+def test_transformer_by_model_name(
+    body: TestTransformerByModelName,
+    project: str,
+    api_token: str | None,
+    current_user: Annotated[models.UserDB, Depends(get_current_active_user)],
+) -> ExperimentRunResult:
+    run_result, metrics, params = run_by_model_name_or_path(
+        project=project,
+        run_name=body.run_name,
+        model_name_or_path=body.model_name_or_path,
+        dataset=body.dataset,
+        experiment_tracker_type=body.experiment_tracker,
+        task=body.task,
+        batch_size=body.batch_size,
+        num_workers=body.num_workers,
+        api_token=api_token
     )
 
     add_experiment_from_results(

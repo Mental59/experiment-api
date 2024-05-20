@@ -1,5 +1,6 @@
 import transformers
 
+from app.core.decorators import single_experiment_run
 from app.models.ml.experiment_tracker_enum import ExperimentTrackerEnum
 from app.services.experiment.tracker.utils import get_experiment_tracker
 from app.services.dataset_processor import generator as dataset_generator
@@ -7,6 +8,7 @@ from app.constants.save_keys import *
 from app.services.experiment.transformers.utils import evaluate_transformer_pipeline
 
 
+@single_experiment_run
 def run_by_model_name_or_path(
     project: str,
     run_name: str,

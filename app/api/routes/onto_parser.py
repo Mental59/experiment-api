@@ -1,6 +1,4 @@
 from typing import Annotated
-import os
-
 from fastapi import APIRouter, Depends, UploadFile, File
 
 from app.services.auth.auth import get_current_active_user
