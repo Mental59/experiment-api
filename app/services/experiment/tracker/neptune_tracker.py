@@ -34,7 +34,7 @@ class NeptuneTracker(ExperimentTracker):
         self.run.stop()
 
     def log_json(self, name: str, data: dict):
-        self.run[name].upload(File.from_content(json.dumps(data), extension='json'))
+        self.run[name].upload(File.from_content(json.dumps(data, indent=4), extension='json'))
     
     def log_txt(self, name: str, data: str):
         self.run[name].upload(File.from_content(data))

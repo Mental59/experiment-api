@@ -28,7 +28,7 @@ class MLFlowTracker(ExperimentTracker):
         mlflow.end_run()
     
     def log_json(self, name: str, data: dict) -> None:
-        mlflow.log_text(json.dumps(data), name + '.json')
+        mlflow.log_text(json.dumps(data, indent=4), name + '.json')
     
     def log_txt(self, name: str, data: str) -> None:
         mlflow.log_text(data, name + '.txt')

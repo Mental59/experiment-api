@@ -15,3 +15,5 @@ TRAIN_BATCH_LOSS_SAVE_KEY = 'train/batch/loss'
 VAL_BATCH_LOSS_SAVE_KEY = 'val/batch/loss'
 
 BEST_MODEL_SAVE_KEY = 'model_checkpoints/best_model'
+
+TRANSFORMER_RAW_OUTPUT_KEY = 'results/raw_model_output'
