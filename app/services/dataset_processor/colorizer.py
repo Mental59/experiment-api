@@ -16,13 +16,16 @@ def colorize_html_table(
         row.find_all('td', recursive=False) for row in bs.find('tbody').find_all('tr', recursive=False)
     ]
     
-    for row, col in matched_indices:
-        cells[row][col]['bgcolor'] = GREEN_COLOR
+    try:
+        for row, col in matched_indices:
+            cells[row][col]['bgcolor'] = GREEN_COLOR
 
-    for row, col in false_positive_indices:
-        cells[row][col]['bgcolor'] = ORANGE_COLOR
+        for row, col in false_positive_indices:
+            cells[row][col]['bgcolor'] = ORANGE_COLOR
 
-    for row, col in false_negative_indices:
-        cells[row][col]['bgcolor'] = BLUE_COLOR
+        for row, col in false_negative_indices:
+            cells[row][col]['bgcolor'] = BLUE_COLOR
+    except IndexError:
+        pass
     
     return str(bs)

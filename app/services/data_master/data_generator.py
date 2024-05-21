@@ -6,6 +6,8 @@ import string
 from random import choice
 from tqdm import tqdm
 import pandas as pd
+
+from app.constants.nn import UNKNOWN_TAG
 from .complex_generator import *
 
 
@@ -219,7 +221,10 @@ class DataGenerator:
                 continue
 
             sentence, *tag = line.split()
-            tag = ' '.join(tag)
+            if len(tag) == 0:
+                tag = UNKNOWN_TAG
+            else:
+                tag = ' '.join(tag)
             sentences.append(sentence)
             tags.append(tag)
 
