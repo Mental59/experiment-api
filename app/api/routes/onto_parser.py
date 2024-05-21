@@ -1,6 +1,8 @@
 from typing import Annotated
-from fastapi import APIRouter, Depends, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from huggingface_hub import HfApi, utils as huggingface_utils
 
+from app.core.exceptions import create_exception_details
 from app.models.onto.add_ml_task import AddMLTask
 from app.models.onto.add_transformer_model import AddTransformerModel
 from app.services.auth.auth import get_current_active_user
@@ -43,6 +45,13 @@ def add_ml_task(body: AddMLTask):
 
 @router.post('/add-transformer-model')
 def add_transformer_model(body: AddTransformerModel):
+
+    api = HfApi()
+    try:
+        api.model_info(body.model_name_or_path)
+    except huggingface_utils.HfHubHTTPError:
+        raise HTTPException(status_code=400, detail=create_exception_details(f'Не удалось найти модель {body.model_name_or_path}'))
+    
     ONTO_PARSER.add_ml_transformer_model(
         parent_node_id=body.parent_node_id,
         node_name=body.node_name,
