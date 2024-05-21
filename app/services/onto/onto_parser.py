@@ -1,7 +1,10 @@
 import json
+import uuid
 
 import networkx as nx
 from fastapi import UploadFile, HTTPException
+
+from app.constants.resources import ONTO_PATH
 
 from ...models.custom_parser.python_parser import FuncCall
 from ...services.custom_parser.python_parser import parse as parse_python_code
@@ -132,6 +135,8 @@ class OntoParser:
 
         if base_experiment is not None:
             self.add_relation("based_on", node["id"], base_experiment["id"])
+        
+        self.save(ONTO_PATH)
 
     def save(self, path: str):
         self.raw_data["last_id"] = str(self.last_id)
@@ -184,31 +189,97 @@ class OntoParser:
         return list(tree.values())
     
     def find_func_calls(self, func_calls: list[FuncCall]):
-        model_nodes = []
-        for model_node in self.get_nodes_linked_to(self.get_node_by_name("Machine Learning Method"), ["is_a"]):
-            model_nodes.extend(self.get_nodes_linked_to(model_node, ["use"]))
+        model_nodes = self.get_nodes_linked_to(self.get_node_by_name("Machine Learning Method"), ["is_a"])
 
         res = []
         for model_node in model_nodes:
-            func_calls_for_model = [fc for fc in func_calls if fc.get_full_name() == model_node["name"]]
-
-            if len(func_calls_for_model) == 0:
-                continue
-            
+            model_lib_nodes = self.get_nodes_linked_to(model_node, ["use"])
             parameter_nodes = self.get_nodes_linked_from(model_node, ["takes_parameter"])
-            if len(parameter_nodes) > 0:
-                parameter_node = parameter_nodes[0]
-                attrs = parameter_node["attributes"]
-                for func_call in func_calls_for_model:
-                    func_call_arg = func_call.get_arg_by_keyword_or_index(index=attrs["index"], keyword=attrs["keyword"])
-                    if func_call_arg.value is not None and attrs["value"] in str(func_call_arg.value):
-                        res.append(model_node)
-                        break
-            else:
-                res.append(model_node)
+            for model_lib_node in model_lib_nodes:
+                func_calls_for_model = [fc for fc in func_calls if fc.get_full_name() == model_lib_node["name"]]
+
+                if len(func_calls_for_model) == 0:
+                    continue
+                
+                if len(parameter_nodes) > 0:
+                    parameter_node = parameter_nodes[0]
+                    attrs = parameter_node["attributes"]
+                    for func_call in func_calls_for_model:
+                        func_call_arg = func_call.get_arg_by_keyword_or_index(index=attrs["index"], keyword=attrs["keyword"])
+                        if func_call_arg.value is not None and attrs["value"] in str(func_call_arg.value):
+                            res.append(model_lib_node)
+                            break
+                else:
+                    res.append(model_lib_node)
 
         return res
     
+    def get_model_nodes(self):
+        model_nodes = self.get_nodes_linked_to(self.get_node_by_name("Machine Learning Method"), ["is_a"])
+        for model_node in model_nodes:
+            combination_nodes = self.get_nodes_linked_from(model_node, ['combination'])
+            model_nodes.extend(combination_nodes)
+        return model_nodes
+    
+    def get_ml_tasks(self) -> list[dict]:
+        machine_learning_node = self.get_node_by_name('Machine Learning')
+        leaf_ml_task_nodes = self.get_leaf_nodes_for_branch('Task')
+        result = []
+        for leaf in leaf_ml_task_nodes:
+            path = self.shortest_path(machine_learning_node, leaf, undirected=True)
+            result.append([p for p in path[1:]])
+        return result
+    
+    def add_ml_task(self, new_node_name: str, parent_node_id: str | None = None):
+        machine_learning_node = self.get_node_by_name('Machine Learning')
+
+        node = self.add_node(new_node_name, attributes={"branch": "Task", "leaf": True})
+        if parent_node_id is None:
+            self.add_relation('is_a', node['id'], machine_learning_node['id'])
+        else:
+            parent_node = self.nodes.get(parent_node_id)
+            if parent_node is None:
+                raise HTTPException(status_code=400, detail=create_exception_details('Родительский узел онтологии не найден'))
+            if parent_node['attributes'].get('leaf', False):
+                parent_node['attributes'] = dict()
+            self.add_relation('is_a', node['id'], parent_node['id'])
+
+        self.save(ONTO_PATH)
+    
+    def add_ml_transformer_model(self, parent_node_id: str, node_name: str, model_name_or_path: str):
+        parent_node = self.nodes.get(parent_node_id)
+        if parent_node is None:
+            raise HTTPException(status_code=400, detail=create_exception_details('Родительский узел онтологии не найден'))
+        node = self.add_node(
+            node_name,
+            attributes=dict(
+                branch="Method",
+                leaf=True,
+                id=str(uuid.uuid4()),
+                model_name_or_path=model_name_or_path,
+                transformer=True
+            )
+        )
+        self.add_relation('used_for', node['id'], parent_node['id'])
+
+        transformer_method = self.get_node_by_name('transformers.AutoModelForTokenClassification.from_pretrained')
+        self.add_relation('use', transformer_method['id'], node['id'])
+
+        parameter_node = self.add_node(
+            '.',
+            attributes={
+                "index": 0,
+                "keyword": "pretrained_model_name_or_path",
+                "value": model_name_or_path
+            }
+        )
+        self.add_relation('takes_parameter', node['id'], parameter_node['id'])
+
+        method_node = self.get_node_by_name('Machine Learning Method')
+        self.add_relation('is_a', node['id'], method_node['id'])
+
+        self.save(ONTO_PATH)
+
     @staticmethod
     def __tree_dicts_to_tree_lists(tree: dict):
         if len(tree) == 0:

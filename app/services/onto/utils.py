@@ -29,4 +29,3 @@ def add_experiment_from_results(
         ),
         base_experiment_id=base_experiment_id
     )
-    ONTO_PARSER.save(ONTO_PATH)
