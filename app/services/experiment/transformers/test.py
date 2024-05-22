@@ -35,7 +35,7 @@ def run_by_model_name_or_path(
                 model_name=model_name_or_path,
                 mode='test',
                 run_name=run_name,
-                transformer_experiment=True
+                transformer_experiment='True'
             )
         )
 
