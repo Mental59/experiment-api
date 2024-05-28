@@ -1,5 +1,7 @@
 import json
 import uuid
+import os
+import re
 
 import networkx as nx
 from fastapi import UploadFile, HTTPException
@@ -301,19 +303,45 @@ class OntoParser:
             raise ValueError("corrupt ontology, relations missing")
 
 
-async def find_models(onto: OntoParser, source_files: list[UploadFile]):
-    ids = set()
-    res_models = []
+async def extract_func_calls(source_files: list[UploadFile]) -> list[FuncCall]:
+    supported_extensions = ['.py', '.ipynb']
 
-    for source_file in source_files:
+    extensions = [os.path.splitext(source_file.filename)[-1] for source_file in source_files]
+    for extension in extensions:
+        if extension not in supported_extensions:
+            raise HTTPException(status_code=400, detail=create_exception_details(f'Unsupported file extension {extension}'))
+
+    res = []
+    for source_file, extension in zip(source_files, extensions):
         try:
             content_bytes = await source_file.read()
             text = content_bytes.decode("utf-8")
         except ValueError as error:
             raise HTTPException(400, detail=create_exception_details(f"Invalid source file; reason: {error}"))
         
-        func_calls = onto.find_func_calls(parse_python_code(text))
-        models = [onto.get_nodes_linked_from(func_call, ["use"])[0] for func_call in func_calls]
+        func_calls = []
+        if extension == '.py':
+            func_calls = parse_python_code(text)
+        elif extension == '.ipynb':
+            code_lines = []
+            data = json.loads(text)
+            for cell in data['cells']:
+                if cell['cell_type'] == 'code':
+                    code_lines.extend([line for line in cell['source'] if re.match(r"%%[a-zA-Z]*", line) is None] + ['\n'])
+            text = ''.join(code_lines)
+            func_calls = parse_python_code(text)
+
+        res.extend(func_calls)
+    return res
+
+
+async def find_models(onto: OntoParser, source_files: list[UploadFile]):
+    ids = set()
+    res_models = []
+
+    for source_file in source_files:
+        onto_func_calls = onto.find_func_calls(await extract_func_calls(source_files=[source_file]))
+        models = [onto.get_nodes_linked_from(func_call, ["use"])[0] for func_call in onto_func_calls]
 
         # find model combinations
         model_combinations = []
@@ -340,7 +368,7 @@ async def find_models(onto: OntoParser, source_files: list[UploadFile]):
         models = [model for model in models if model["id"] not in excluded_model_ids and model["id"] not in ids]
         ids.update([model["id"] for model in models])
 
-        libraries = [dict(id=lib["id"], name=lib["name"]) for lib in func_calls]
+        libraries = [dict(id=lib["id"], name=lib["name"]) for lib in onto_func_calls]
         res_models.extend([dict(id=model["id"], name=model["name"], libraries=libraries) for model in models])
 
     return res_models

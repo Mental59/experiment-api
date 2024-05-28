@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from huggingface_hub import HfApi, utils as huggingface_utils
 
 from app.core.exceptions import create_exception_details
+from app.models.custom_parser.python_parser import FuncCallDto
 from app.models.onto.add_ml_task import AddMLTask
 from app.models.onto.add_transformer_model import AddTransformerModel
 from app.services.auth.auth import get_current_active_user
@@ -14,7 +15,7 @@ router = APIRouter(dependencies=[Depends(get_current_active_user)])
 
 
 @router.post('/find-models')
-async def find_models(source_files: Annotated[list[UploadFile], File(description="Python source code")]):
+async def extract_function_calls(source_files: Annotated[list[UploadFile], File(description="Python source code")]):
     models = await onto_parser_service.find_models(ONTO_PARSER, source_files)
     return models
 
@@ -58,3 +59,14 @@ def add_transformer_model(body: AddTransformerModel):
         model_name_or_path=body.model_name_or_path
     )
     return True
+
+
+@router.post('/extract-function-calls')
+async def extract_function_calls(source_files: Annotated[list[UploadFile], File(description="Python source code")]) -> list[FuncCallDto]:
+    func_calls = await onto_parser_service.extract_func_calls(source_files)
+    return [func_call.to_dto() for func_call in func_calls]
+
+
+@router.post('/create-onto')
+def create_onto():
+    pass

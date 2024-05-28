@@ -1,5 +1,18 @@
 import ast
 
+from pydantic import BaseModel
+
+
+class FuncArgDto(BaseModel):
+    index: int
+    keyword: str | None
+    value: int | float | str | None
+
+
+class FuncCallDto(BaseModel):
+    name: str
+    args: list[FuncArgDto]
+
 
 class Import:
     def __init__(self, name, asname, module = None):
@@ -24,7 +37,7 @@ class FuncArg:
         self.arg = arg
         self.index = index
         self.keyword = keyword
-        self.value = value  
+        self.value = value 
     
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(arg={self.arg}, value={self.value}, index={self.index}, keyword={self.keyword})"
@@ -56,6 +69,10 @@ class FuncCall:
         
         if index < len(self.args):
             return self.args[index]
+
+    def to_dto(self):
+        args = [FuncArgDto(index=arg.index, keyword=arg.keyword, value=arg.value) for arg in self.args]
+        return FuncCallDto(name=self.get_full_name(), args=args)
  
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(func_name={self.func_name}, module_name={self.module_name}, import_module={self.import_module}, args={self.args})"
