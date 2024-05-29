@@ -1,43 +1,44 @@
 from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi.responses import FileResponse
 from huggingface_hub import HfApi, utils as huggingface_utils
 
 from app.core.exceptions import create_exception_details
-from app.models.custom_parser.python_parser import FuncCallDto
 from app.models.onto.add_ml_task import AddMLTask
 from app.models.onto.add_transformer_model import AddTransformerModel
 from app.services.auth.auth import get_current_active_user
+from app.services.onto.onto_generator import OntoGenerator
 
 from ...services.onto import onto_parser as onto_parser_service
-from ...services.onto.onto import ONTO_PARSER
+from ...services.onto.onto import MANAGEMENT_ONTO_PARSER
 
 router = APIRouter(dependencies=[Depends(get_current_active_user)])
 
 
-@router.post('/find-models')
-async def extract_function_calls(source_files: Annotated[list[UploadFile], File(description="Python source code")]):
-    models = await onto_parser_service.find_models(ONTO_PARSER, source_files)
-    return models
+@router.post('/extract-knowledge-from-source-files')
+async def extract_knowledge_from_source_files(source_files: Annotated[list[UploadFile], File(description="Python source code")]):
+    knowledge_about_models = await onto_parser_service.extract_knowledge_from_source_files(MANAGEMENT_ONTO_PARSER, source_files)
+    return knowledge_about_models
 
 
 @router.get('/tree-view')
 def get_tree_view():
-    return ONTO_PARSER.get_main_branches_tree_view()
+    return MANAGEMENT_ONTO_PARSER.get_main_branches_tree_view()
 
 
 @router.get('/models')
 def get_models():
-    return ONTO_PARSER.get_model_nodes()
+    return MANAGEMENT_ONTO_PARSER.get_model_nodes()
 
 
 @router.get('/ml-tasks')
 def get_ml_tasks():
-    return ONTO_PARSER.get_ml_tasks()
+    return MANAGEMENT_ONTO_PARSER.get_ml_tasks()
 
 
 @router.post('/add-ml-task')
 def add_ml_task(body: AddMLTask):
-    ONTO_PARSER.add_ml_task(
+    MANAGEMENT_ONTO_PARSER.add_ml_task(
         new_node_name=body.new_node_name,
         parent_node_id=body.parent_node_id
     )
@@ -53,7 +54,7 @@ def add_transformer_model(body: AddTransformerModel):
     except huggingface_utils.HfHubHTTPError:
         raise HTTPException(status_code=400, detail=create_exception_details(f'Не удалось найти модель {body.model_name_or_path}'))
     
-    ONTO_PARSER.add_ml_transformer_model(
+    MANAGEMENT_ONTO_PARSER.add_ml_transformer_model(
         parent_node_id=body.parent_node_id,
         node_name=body.node_name,
         model_name_or_path=body.model_name_or_path
@@ -61,12 +62,8 @@ def add_transformer_model(body: AddTransformerModel):
     return True
 
 
-@router.post('/extract-function-calls')
-async def extract_function_calls(source_files: Annotated[list[UploadFile], File(description="Python source code")]) -> list[FuncCallDto]:
-    func_calls = await onto_parser_service.extract_func_calls(source_files)
-    return [func_call.to_dto() for func_call in func_calls]
-
-
-@router.post('/create-onto')
-def create_onto():
-    pass
+@router.post('/generate-ontology')
+async def generate_ontology(source_files: Annotated[list[UploadFile], File(description="Python source code")]):
+    onto_parser = await OntoGenerator.generate_ontology(source_files)
+    data = onto_parser.get_update_raw_data()
+    return data

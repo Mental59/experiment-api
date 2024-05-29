@@ -6,6 +6,7 @@ from app.db import models
 from app.models.ml.transformer_input import TestTransformerByModelName
 from app.services.auth.auth import get_current_active_user
 from app.services.experiment.transformers.test import run_by_model_name_or_path
+from app.services.onto.onto import MANAGEMENT_ONTO_PARSER
 from app.services.onto.utils import add_experiment_from_results
 
 from ...models.ml.ml_train_input import MLTrainExperimentInput
@@ -43,6 +44,7 @@ def train(
     )
 
     add_experiment_from_results(
+        MANAGEMENT_ONTO_PARSER,
         run_result,
         params,
         metrics,
@@ -71,6 +73,7 @@ def test(
     )
 
     add_experiment_from_results(
+        MANAGEMENT_ONTO_PARSER,
         run_result,
         params,
         metrics,
@@ -102,6 +105,7 @@ def test_transformer_by_model_name(
     )
 
     add_experiment_from_results(
+        MANAGEMENT_ONTO_PARSER,
         run_result,
         params,
         metrics,

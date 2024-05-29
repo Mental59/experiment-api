@@ -105,7 +105,7 @@ class OntoParser:
         if attributes is None:
             attributes = dict()
 
-        node = dict(attributes=attributes, id=str(self.last_id), name=name, namespace=self.namespaces["default"], position_x=0.0, position_y=0.0)
+        node = dict(attributes=attributes, id=str(self.last_id + 1), name=name, namespace=self.namespaces["default"], position_x=0.0, position_y=0.0)
         self.digraph.add_node(node["id"])
         self.last_id += 1
 
@@ -117,7 +117,11 @@ class OntoParser:
         if attributes is None:
             attributes = dict()
         
-        relation = dict(attributes=attributes, destination_node_id=destination_node_id, id=str(self.last_id), name=name, namespace=self.namespaces["default"], source_node_id=source_node_id)
+        hashed_relation = self.hashed_relations.get(f"{source_node_id}-{destination_node_id}")
+        if hashed_relation is not None:
+            return hashed_relation
+        
+        relation = dict(attributes=attributes, destination_node_id=destination_node_id, id=str(self.last_id + 1), name=name, namespace=self.namespaces["default"], source_node_id=source_node_id)
         self.digraph.add_edge(source_node_id, destination_node_id)
         self.last_id += 1
 
@@ -141,12 +145,16 @@ class OntoParser:
         self.save(ONTO_PATH)
 
     def save(self, path: str):
+        raw_data = self.get_update_raw_data()
+
+        with open(path, "w", encoding="utf-8") as file:
+            json.dump(raw_data, file, indent=4)
+    
+    def get_update_raw_data(self):
         self.raw_data["last_id"] = str(self.last_id)
         self.raw_data["nodes"] = list(self.nodes.values())
         self.raw_data["relations"] = self.relations
-
-        with open(path, "w", encoding="utf-8") as file:
-            json.dump(self.raw_data, file, indent=4)
+        return self.raw_data
 
     def get_main_branch_nodes(self):
         return self.get_nodes_linked_from(self.get_node_by_name(self.init_node_name))
@@ -190,7 +198,7 @@ class OntoParser:
 
         return list(tree.values())
     
-    def find_func_calls(self, func_calls: list[FuncCall]):
+    def find_model_lib_nodes(self, func_calls: list[FuncCall]):
         model_nodes = self.get_nodes_linked_to(self.get_node_by_name("Machine Learning Method"), ["is_a"])
 
         res = []
@@ -205,14 +213,14 @@ class OntoParser:
                 
                 if len(parameter_nodes) > 0:
                     parameter_node = parameter_nodes[0]
-                    attrs = parameter_node["attributes"]
+                    parameter_node_attrs = parameter_node["attributes"]
                     for func_call in func_calls_for_model:
-                        func_call_arg = func_call.get_arg_by_keyword_or_index(index=attrs["index"], keyword=attrs["keyword"])
-                        if func_call_arg.value is not None and attrs["value"] in str(func_call_arg.value):
-                            res.append(model_lib_node)
+                        func_call_arg = func_call.get_arg_by_keyword_or_index(index=parameter_node_attrs["index"], keyword=parameter_node_attrs["keyword"])
+                        if func_call_arg.value is not None and parameter_node_attrs["value"] == str(func_call_arg.value):
+                            res.append(dict(model_lib_node=model_lib_node, model_node=model_node, parameter_node_attrs=parameter_node_attrs))
                             break
                 else:
-                    res.append(model_lib_node)
+                    res.append(dict(model_lib_node=model_lib_node, model_node=model_node))
 
         return res
     
@@ -231,6 +239,15 @@ class OntoParser:
             path = self.shortest_path(machine_learning_node, leaf, undirected=True)
             result.append([p for p in path[1:]])
         return result
+    
+    def get_ml_tasks_for_model_node(self, model_node: dict):
+        machine_learning_node = self.get_node_by_name('Machine Learning')
+        lowest_tasks = self.get_nodes_linked_from(model_node, ['used_for'])
+        if len(lowest_tasks) > 0:
+            lowest_task = lowest_tasks[0]
+            path = self.shortest_path(lowest_task, machine_learning_node, undirected=True)
+            return path[::-1]
+        return []
     
     def add_ml_task(self, new_node_name: str, parent_node_id: str | None = None):
         machine_learning_node = self.get_node_by_name('Machine Learning')
@@ -335,21 +352,23 @@ async def extract_func_calls(source_files: list[UploadFile]) -> list[FuncCall]:
     return res
 
 
-async def find_models(onto: OntoParser, source_files: list[UploadFile]):
-    ids = set()
+async def extract_knowledge_from_source_files(onto: OntoParser, source_files: list[UploadFile]):
+    found_model_ids = set()
     res_models = []
 
     for source_file in source_files:
-        onto_func_calls = onto.find_func_calls(await extract_func_calls(source_files=[source_file]))
-        models = [onto.get_nodes_linked_from(func_call, ["use"])[0] for func_call in onto_func_calls]
+        onto_model_lib_nodes = onto.find_model_lib_nodes(await extract_func_calls(source_files=[source_file]))
 
-        # find model combinations
-        model_combinations = []
-        excluded_model_ids = set() # exclude models that are used as a combination of models (for example, lstm and crf are used as one model lstm-crf)
-        for i in range(len(models)):
-            for j in range(i + 1, len(models)):
-                path_i_j = onto.shortest_path(models[i], models[j], undirected=False)
-                path_j_i = onto.shortest_path(models[j], models[i], undirected=False)
+        excluded_combination_model_ids = set() # exclude models that are used as a combination of models (for example, lstm and crf are used as one model lstm-crf)
+        n = len(onto_model_lib_nodes)
+        for i in range(n):
+            model_i = onto_model_lib_nodes[i]["model_node"]
+            lib_i = onto_model_lib_nodes[i]["model_lib_node"]
+            for j in range(i + 1, n):
+                model_j = onto_model_lib_nodes[j]["model_node"]
+                lib_j = onto_model_lib_nodes[j]["model_lib_node"]
+                path_i_j = onto.shortest_path(model_i, model_j, undirected=False)
+                path_j_i = onto.shortest_path(model_j, model_i, undirected=False)
                 path = None
 
                 if len(path_i_j) == 3:
@@ -361,15 +380,54 @@ async def find_models(onto: OntoParser, source_files: list[UploadFile]):
                     link_1 = onto.get_link_between(path[0], path[1])
                     link_2 = onto.get_link_between(path[1], path[2])
                     if link_1["name"] == "combination" and link_2["name"] == "with":
-                        model_combinations.append(path[1])
-                        excluded_model_ids.update([models[i]["id"], models[j]["id"]])
+                        model = path[1]
+                        if model["id"] not in excluded_combination_model_ids and model["id"] not in found_model_ids:
+                            excluded_combination_model_ids.update([model_i["id"], model_j["id"]])
 
-        models.extend(model_combinations)
-        models = [model for model in models if model["id"] not in excluded_model_ids and model["id"] not in ids]
-        ids.update([model["id"] for model in models])
+                            combination_1_model = dict(
+                                id=model_i["id"],
+                                name=model_i["name"],
+                                attributes=model_i["attributes"],
+                                libraries=[dict(id=lib_i["id"], name=lib_i["name"])],
+                                tasks=[dict(id=node["id"], name=node["name"]) for node in onto.get_ml_tasks_for_model_node(model_i)]
+                            )
+                            combination_2_model = dict(
+                                id=model_j["id"],
+                                name=model_j["name"],
+                                attributes=model_j["attributes"],
+                                libraries=[dict(id=lib_j["id"], name=lib_j["name"])],
+                                tasks=[dict(id=node["id"], name=node["name"]) for node in onto.get_ml_tasks_for_model_node(model_j)]
+                            )
 
-        libraries = [dict(id=lib["id"], name=lib["name"]) for lib in onto_func_calls]
-        res_models.extend([dict(id=model["id"], name=model["name"], libraries=libraries) for model in models])
+                            libraries = [dict(id=lib["id"], name=lib["name"]) for lib in [lib_i, lib_j]]
+                            ml_tasks = [dict(id=node["id"], name=node["name"]) for node in onto.get_ml_tasks_for_model_node(model)]
+                            res_models.append(
+                                dict(
+                                    id=model["id"],
+                                    name=model["name"],
+                                    attributes=model["attributes"],
+                                    libraries=libraries,
+                                    tasks=ml_tasks,
+                                    combination_1=combination_1_model,
+                                    combination_2=combination_2_model
+                                )
+                            )
+
+        for onto_model_lib_node in onto_model_lib_nodes:
+            if onto_model_lib_node["model_node"]["id"] not in excluded_combination_model_ids and onto_model_lib_node["model_node"]["id"] not in found_model_ids:
+                libraries = [dict(id=onto_model_lib_node["model_lib_node"]["id"], name=onto_model_lib_node["model_lib_node"]["name"])]
+                ml_tasks = [dict(id=node["id"], name=node["name"]) for node in onto.get_ml_tasks_for_model_node(onto_model_lib_node["model_node"])]
+                res_models.append(
+                    dict(
+                        id=onto_model_lib_node["model_node"]["id"],
+                        name=onto_model_lib_node["model_node"]["name"],
+                        attributes=onto_model_lib_node["model_node"]["attributes"],
+                        libraries=libraries,
+                        tasks=ml_tasks
+                    )
+                )
+        
+        found_model_ids.update([model["id"] for model in res_models])
 
     return res_models
 

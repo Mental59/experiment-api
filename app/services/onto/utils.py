@@ -2,10 +2,11 @@ from datetime import datetime
 from app.db import models
 from app.models.ml.eval_res import MetricsEvaluateRes
 from app.models.ml.experiment_run_result import ExperimentRunResult
-from app.services.onto.onto import ONTO_PARSER, ONTO_PATH
+from app.services.onto.onto_parser import OntoParser
 
 
 def add_experiment_from_results(
+    onto_parser: OntoParser,
     run_result: ExperimentRunResult,
     params: dict,
     metrics: MetricsEvaluateRes,
@@ -18,7 +19,7 @@ def add_experiment_from_results(
     metrics_dict = metrics.model_dump()
     params["experiment_mode"] = mode
 
-    ONTO_PARSER.add_experiment(
+    onto_parser.add_experiment(
         f'{run_result.run_name} ({run_result.run_id}) {now}',
         attributes=dict(
             time=now,
