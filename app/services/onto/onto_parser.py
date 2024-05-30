@@ -7,6 +7,7 @@ import networkx as nx
 from fastapi import UploadFile, HTTPException
 
 from app.constants.resources import ONTO_PATH
+from app.services.onto.utils import read_uploaded_file
 
 from ...models.custom_parser.python_parser import FuncCall
 from ...services.custom_parser.python_parser import parse as parse_python_code
@@ -53,11 +54,14 @@ class OntoParser:
             return []
 
     @classmethod
-    def load_from_file(cls, path, encoding="utf-8"):
+    def load_from_file(cls, path, encoding="utf-8", remove_history=False):
         with open(path, encoding=encoding) as f:
             data = json.load(f)
 
         cls.__validate_data(data)
+
+        if remove_history:
+            data["history"] = []
         
         return cls(data)
     
@@ -330,11 +334,7 @@ async def extract_func_calls(source_files: list[UploadFile]) -> list[FuncCall]:
 
     res = []
     for source_file, extension in zip(source_files, extensions):
-        try:
-            content_bytes = await source_file.read()
-            text = content_bytes.decode("utf-8")
-        except ValueError as error:
-            raise HTTPException(400, detail=create_exception_details(f"Invalid source file; reason: {error}"))
+        text = await read_uploaded_file(source_file)
         
         func_calls = []
         if extension == '.py':
@@ -399,8 +399,8 @@ async def extract_knowledge_from_source_files(onto: OntoParser, source_files: li
                                 tasks=[dict(id=node["id"], name=node["name"]) for node in onto.get_ml_tasks_for_model_node(model_j)]
                             )
 
-                            libraries = [dict(id=lib["id"], name=lib["name"]) for lib in [lib_i, lib_j]]
-                            ml_tasks = [dict(id=node["id"], name=node["name"]) for node in onto.get_ml_tasks_for_model_node(model)]
+                            libraries = [dict(id=lib["id"], name=lib["name"], attributes=lib["attributes"]) for lib in [lib_i, lib_j]]
+                            ml_tasks = [dict(id=node["id"], name=node["name"], attributes=node["attributes"]) for node in onto.get_ml_tasks_for_model_node(model)]
                             res_models.append(
                                 dict(
                                     id=model["id"],
@@ -415,8 +415,8 @@ async def extract_knowledge_from_source_files(onto: OntoParser, source_files: li
 
         for onto_model_lib_node in onto_model_lib_nodes:
             if onto_model_lib_node["model_node"]["id"] not in excluded_combination_model_ids and onto_model_lib_node["model_node"]["id"] not in found_model_ids:
-                libraries = [dict(id=onto_model_lib_node["model_lib_node"]["id"], name=onto_model_lib_node["model_lib_node"]["name"])]
-                ml_tasks = [dict(id=node["id"], name=node["name"]) for node in onto.get_ml_tasks_for_model_node(onto_model_lib_node["model_node"])]
+                libraries = [dict(id=onto_model_lib_node["model_lib_node"]["id"], name=onto_model_lib_node["model_lib_node"]["name"], attributes=onto_model_lib_node["model_lib_node"]["attributes"])]
+                ml_tasks = [dict(id=node["id"], name=node["name"], attributes=node["attributes"]) for node in onto.get_ml_tasks_for_model_node(onto_model_lib_node["model_node"])]
                 res_models.append(
                     dict(
                         id=onto_model_lib_node["model_node"]["id"],

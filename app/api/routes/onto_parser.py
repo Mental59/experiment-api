@@ -1,11 +1,11 @@
 from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
-from fastapi.responses import FileResponse
+from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile, File
 from huggingface_hub import HfApi, utils as huggingface_utils
 
 from app.core.exceptions import create_exception_details
 from app.models.onto.add_ml_task import AddMLTask
 from app.models.onto.add_transformer_model import AddTransformerModel
+from app.models.onto.generate_ontology import GenerateOntologyInput
 from app.services.auth.auth import get_current_active_user
 from app.services.onto.onto_generator import OntoGenerator
 
@@ -63,7 +63,11 @@ def add_transformer_model(body: AddTransformerModel):
 
 
 @router.post('/generate-ontology')
-async def generate_ontology(source_files: Annotated[list[UploadFile], File(description="Python source code")]):
-    onto_parser = await OntoGenerator.generate_ontology(source_files)
+async def generate_ontology(
+    python_version: str = Form(...),
+    source_files: list[UploadFile] = File(description="Python source code"),
+    version_file: UploadFile = File(description="requirements.txt file")
+):
+    onto_parser = await OntoGenerator.generate_ontology(source_files, version_file, python_version=python_version)
     data = onto_parser.get_update_raw_data()
     return data
