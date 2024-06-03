@@ -63,13 +63,14 @@ class OntoGenerator:
             first_lib_nodes = []
             for library in knowledge_about_model["libraries"]:
                 first_lib_node, last_lib_node = cls.create_ml_lib_nodes(onto_parser, python_lib_node, library)
-                if last_lib_node["name"] in version_dict and last_lib_node["name"] not in versioned_lib_names:
+                lib_name = first_lib_node["attributes"].get("package_name", last_lib_node["name"])
+                if lib_name in version_dict and last_lib_node["name"] not in versioned_lib_names:
                     onto_parser.add_relation(
                         name="version",
                         source_node_id=last_lib_node["id"],
-                        destination_node_id=onto_parser.add_node(name=version_dict[last_lib_node["name"]])["id"]
+                        destination_node_id=onto_parser.add_node(name=version_dict[lib_name])["id"]
                     )
-                    versioned_lib_names.add(last_lib_node["name"])
+                    versioned_lib_names.add(lib_name)
                 first_lib_nodes.append(first_lib_node)
             ml_model_node = cls.create_ml_model_node(onto_parser, machine_learning_method_node, ml_model=knowledge_about_model, lib_nodes=first_lib_nodes)
             cls.create_ml_tasks(onto_parser, machine_learning_node, tasks=knowledge_about_model["tasks"], ml_model_node=ml_model_node)
@@ -89,7 +90,7 @@ class OntoGenerator:
             node = cls.get_node_by_name_or_create(
                 onto_parser=onto_parser,
                 node_name=node_name,
-                attrs=library["attributes"]
+                attrs=library["attributes"] if i == 0 else {} 
             )
 
             if i == 0:
